@@ -1,35 +1,48 @@
-
-import React from 'react';
-import { Search, Zap } from 'lucide-react';
+// frontend/src/App.jsx
+import React, { useState } from 'react';
+import { Search, LoaderCircle } from 'lucide-react';
+import useGraphStore from './store/graphStore';
+import GraphCanvas from './components/graphCanvas';
 
 function App() {
+  const [query, setQuery] = useState('');
+  const { fetchGraphData, isLoading, error } = useGraphStore();
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (query.trim()) {
+      fetchGraphData(query);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-space-gradient flex items-center justify-center p-4">
-      
-      {/* Container de Teste Glassmorphism */}
-      <div className="glass-panel p-8 max-w-md w-full text-center">
-        <div className="flex justify-center mb-4">
-          <Zap className="text-electric-cyan w-12 h-12" />
-        </div>
-        
-        <h1 className="text-2xl font-bold mb-2">Synapse Framework</h1>
-        <p className="text-gray-400 mb-6 font-mono text-sm">
-          A interface galáctica está online.
-        </p>
+    <div className="relative min-h-screen w-full bg-space-gradient overflow-hidden">
+      {/* O Canvas do Grafo fica no fundo */}
+      <GraphCanvas />
 
-        {/* Input estilizado */}
-        <div className="relative">
-          <input 
-            type="text" 
-            placeholder="Qual o sentido da vida?"
-            className="w-full bg-white/5 border border-white/10 rounded-lg py-3 px-4 pl-12 focus:outline-none focus:border-electric-cyan transition-all"
-          />
-          <Search className="absolute left-4 top-3.5 text-gray-500 w-5 h-5" />
-        </div>
-
-        <button className="mt-6 w-full py-3 rounded-lg bg-magenta-glow/80 hover:bg-magenta-glow text-white font-bold transition-all shadow-lg shadow-magenta-glow/20">
-          Tecelar Conhecimento
-        </button>
+      {/* O painel de busca flutua sobre o grafo */}
+      <div className="absolute top-8 left-1/2 -translate-x-1/2 z-10 w-full max-w-lg px-4">
+        <form onSubmit={handleSearch} className="glass-panel p-4">
+          <div className="relative">
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Explore o universo do conhecimento..."
+              className="w-full bg-white/5 border border-white/10 rounded-lg py-3 px-4 pl-12 focus:outline-none focus:border-electric-cyan transition-all"
+              disabled={isLoading}
+            />
+            <Search className="absolute left-4 top-3.5 text-gray-500 w-5 h-5" />
+            <button
+              type="submit"
+              className="absolute right-2 top-[7px] h-9 px-4 rounded-md bg-magenta-glow/80 hover:bg-magenta-glow text-white font-bold transition-all shadow-lg shadow-magenta-glow/20 flex items-center justify-center disabled:bg-gray-500"
+              disabled={isLoading}
+            >
+              {isLoading ? <LoaderCircle className="animate-spin" /> : 'Tecelar'}
+            </button>
+          </div>
+          {error && <p className="text-red-400 text-center mt-2">{error}</p>}
+        </form>
       </div>
     </div>
   );
