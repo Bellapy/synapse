@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-deep-space text-white overflow-hidden;
+    font-family: 'Inter', sans-serif; /* Fonte moderna sans-serif */
+  }
+}
+
+/* Utilitário para o efeito de Vidro (Glassmorphism) */
+.glass-panel {
+  @apply bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl shadow-2xl;
+}
+
+/* Efeito de brilho nos nós (Glow) */
+.glow-cyan {
+  box-shadow: 0 0 15px #22d3ee;
+}
