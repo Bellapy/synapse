@@ -1,40 +1,65 @@
 // frontend/src/services/api.js
 
-// Usa uma variável de ambiente para a URL da API, com um fallback para desenvolvimento local.
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
 /**
- * Chama a API do backend para gerar ou expandir um grafo.
- * @param {string} query - O conceito ou pergunta a ser explorado.
- * @param {string[]} [existingNodeLabels] - (Opcional) Uma lista dos labels dos nós já existentes no grafo.
- * @returns {Promise<object>} Os dados do grafo (nós e arestas) retornados pela API.
+ * Chama a API para gerar ou expandir um grafo.
+ * @param {string} query - O conceito a ser explorado.
+ * @param {string[]} [existingNodeLabels] - (Opcional) Labels dos nós existentes.
+ * @param {string} [expansionType] - (Opcional) 'general' ou 'counter'.
+ * @returns {Promise<object>} Os dados do grafo.
  */
-export async function generateGraph(query, existingNodeLabels = null) {
+export async function generateGraph(query, existingNodeLabels = null, expansionType = 'general') {
   try {
-    // Monta o corpo da requisição.
     const requestBody = {
       query: query,
-      existing_node_labels: existingNodeLabels
+      existing_node_labels: existingNodeLabels,
+      expansion_type: expansionType,
     };
 
     const response = await fetch(`${API_URL}/api/generate-graph`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
-      // Se a resposta do servidor não for 'ok', lança um erro para ser capturado no store.
       const errorData = await response.json();
       throw new Error(errorData.detail || `Erro na API: ${response.statusText}`);
     }
-
     return await response.json();
   } catch (error) {
-    // Captura erros de rede ou de parsing do JSON.
-    console.error("Erro no serviço da API:", error);
-    throw error; // Re-lança o erro para ser tratado pela lógica que chamou a função.
+    console.error("Erro no serviço da API (generateGraph):", error);
+    throw error;
+  }
+}
+
+/**
+ * Busca os detalhes contextuais de um nó na API.
+ * @param {string} nodeLabel - O label do nó selecionado.
+ * @param {string} originalQuery - A pergunta inicial do usuário.
+ * @returns {Promise<object>} Os detalhes do nó (type_tag, contextual_summary, etc.).
+ */
+export async function fetchNodeDetails(nodeLabel, originalQuery) {
+  try {
+    const requestBody = {
+      node_label: nodeLabel,
+      original_query: originalQuery,
+    };
+
+    const response = await fetch(`${API_URL}/api/node-details`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || `Erro na API: ${response.statusText}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Erro no serviço da API (fetchNodeDetails):", error);
+    throw error;
   }
 }

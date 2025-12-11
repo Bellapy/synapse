@@ -2,10 +2,11 @@
 
 import os
 from dotenv import load_dotenv
+# --- CORREÇÃO AQUI ---
+from pydantic import BaseModel # Adicione esta importação
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_google_genai import ChatGoogleGenerativeAI
-# Importaremos apenas os modelos Pydantic que esta função precisa
 from models.graph import NodeDetailResponse
 
 load_dotenv()
@@ -16,7 +17,7 @@ async def generate_contextual_details(original_query: str, node_label: str) -> N
     """
     try:
         # PydanticOutputParser garante que a IA responda no formato exato que precisamos
-        # Vamos usar uma versão simplificada do nosso modelo de resposta, pois as conexões são calculadas separadamente.
+        # Agora que importamos BaseModel, esta classe é válida.
         class NodeDetailParser(BaseModel):
             label: str
             type_tag: str
@@ -24,7 +25,7 @@ async def generate_contextual_details(original_query: str, node_label: str) -> N
         
         parser = PydanticOutputParser(pydantic_object=NodeDetailParser)
 
-        model = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.3)
+        model = ChatGoogleGenerativeAI(model="gemini-2.5-flash-lite-preview-09-2025", temperature=0.3)
 
         prompt_template = """
         Você é um especialista em síntese de conhecimento chamado Synapse. Sua tarefa é explicar um conceito de forma contextual.
@@ -52,8 +53,6 @@ async def generate_contextual_details(original_query: str, node_label: str) -> N
             "node_label": node_label
         })
         
-        # Retorna o objeto completo, mesmo que o parser só tenha validado uma parte.
-        # As 'connections' serão adicionadas na camada da API.
         return NodeDetailResponse(
             label=response.label,
             type_tag=response.type_tag,
