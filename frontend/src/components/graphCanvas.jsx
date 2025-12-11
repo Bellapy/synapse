@@ -3,11 +3,10 @@ import React, { useMemo, useRef, useEffect } from 'react';
 import ForceGraph3D from 'react-force-graph-3d';
 import useGraphStore from '../store/graphStore';
 import * as THREE from 'three';
-// CORREÇÃO: Importar os componentes corretos da biblioteca 'postprocessing'
 import { BloomEffect, EffectPass } from 'postprocessing';
 
 const GraphCanvas = () => {
-  const { nodes, edges, setSelectedNode, clearSelectedNode } = useGraphStore();
+  const { nodes, edges, setSelectedNode, clearSelectedNode, expandNode } = useGraphStore();
   const graphRef = useRef();
 
   const graphData = useMemo(() => ({
@@ -19,24 +18,15 @@ const GraphCanvas = () => {
     }))
   }), [nodes, edges]);
 
-  // Efeito para adicionar o Bloom
   useEffect(() => {
     if (graphRef.current) {
-      // CORREÇÃO: A biblioteca 'postprocessing' funciona em duas etapas.
-
-      // 1. Crie o EFEITO (o que ele faz)
       const bloomEffect = new BloomEffect({
         luminanceThreshold: 0.1,
         luminanceSmoothing: 0.2,
-        intensity: 2.0, // Aumentei um pouco a intensidade para o efeito ser mais notável
+        intensity: 2.0,
         radius: 0.6,
       });
-
-      // 2. Crie o PASSO (como ele se encaixa no pipeline de renderização)
-      // O EffectPass precisa da câmera para funcionar corretamente.
       const effectPass = new EffectPass(graphRef.current.camera(), bloomEffect);
-      
-      // 3. Adicione o PASSO ao compositor.
       graphRef.current.postProcessingComposer().addPass(effectPass);
     }
   }, []);
@@ -45,7 +35,6 @@ const GraphCanvas = () => {
     return null;
   }
 
-  // O shader do nó permanece o mesmo, está perfeito.
   const getNodeObject = () => {
     const geometry = new THREE.SphereGeometry(5, 32, 32);
     const material = new THREE.ShaderMaterial({
@@ -100,6 +89,13 @@ const GraphCanvas = () => {
             3000
           );
           setSelectedNode(node);
+        }}
+        // --- NOVA INTERAÇÃO ---
+        onNodeDoubleClick={(node) => {
+          // Limpa a seleção do painel para não confundir o usuário
+          clearSelectedNode(); 
+          // Chama a nova ação de expansão do store
+          expandNode(node.label);
         }}
         onBackgroundClick={clearSelectedNode}
       />

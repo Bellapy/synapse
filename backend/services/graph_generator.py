@@ -2,69 +2,75 @@
 
 import os
 from dotenv import load_dotenv
-
-# Componentes principais do LangChain
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_google_genai import ChatGoogleGenerativeAI
-
-# Nossos modelos de dados Pydantic
 from models.graph import GraphResponse
+from typing import List, Optional
 
-# Carrega as variáveis de ambiente (nossa GOOGLE_API_KEY) do arquivo .env
 load_dotenv()
 
-# Lógica para garantir que a chave da API foi carregada
 if "GOOGLE_API_KEY" not in os.environ:
     raise ValueError("GOOGLE_API_KEY não encontrada no ambiente. Verifique seu arquivo .env")
 
-async def generate_graph_from_query(query: str) -> GraphResponse:
+async def generate_graph_from_query(query: str, existing_node_labels: Optional[List[str]] = None, expansion_type: str = "general") -> GraphResponse:
     """
-    Função assíncrona para gerar um grafo a partir de uma query usando LangChain e Gemini.
+    Gera ou expande um grafo a partir de uma query usando LangChain e Gemini.
+    Suporta diferentes tipos de expansão.
     """
     try:
-        # 1. Configura o parser para garantir que a saída da IA siga nosso modelo GraphResponse
         parser = PydanticOutputParser(pydantic_object=GraphResponse)
+        model = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.6) # Mais criatividade para expansão
 
-        # 2. Instancia o modelo de IA.
-        # temperature=0.4 controla a "criatividade". Mais baixo = mais determinístico.
-        model = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.4)
-
-        # 3. Criação do Prompt Template - Esta é a alma da nossa IA.
-        # Estamos dando instruções claras sobre sua persona, a tarefa e o formato da saída.
-        prompt_template = """
-        Você é um arquiteto de conhecimento especialista chamado Synapse.
-        Sua tarefa é transformar uma pergunta ou conceito do usuário em um grafo de conhecimento detalhado.
-
-        Para a pergunta do usuário: "{query}"
-
-        Gere um grafo com 5 a 7 nós interconectados que explorem o tópico.
-        Os nós devem representar conceitos chave, pessoas ou ideias.
-        As arestas (edges) devem descrever a relação entre os nós (ex: "influenciou", "opõe-se a", "baseado em").
-        Cada nó deve ter um resumo conciso de 1-2 sentenças.
-
-        Evite respostas rasas. Busque conexões inusitadas e multidisciplinares.
-
-        {format_instructions}
-        """
+        existing_nodes_str = ", ".join(f"'{label}'" for label in existing_node_labels) if existing_node_labels else ""
+        
+        # Seleciona o prompt com base no tipo de expansão
+        if expansion_type == "counter":
+            prompt_template_str = """
+            Você é um especialista em dialética chamado Synapse. Sua tarefa é encontrar um contra-argumento.
+            O usuário está explorando o conceito: "{query}"
+            O grafo atual já contém: [{existing_nodes}]
+            
+            Gere 1 ou 2 NOVOS nós que representem um forte contra-argumento, uma visão oposta ou uma crítica ao conceito "{query}".
+            IMPORTANTE: NÃO gere nós para conceitos que já existem.
+            O novo nó deve se conectar ao nó de origem ("{query}") com uma relação de oposição (ex: "critica", "opõe-se a").
+            Dê um resumo conciso para cada novo nó.
+            {format_instructions}
+            """
+        elif existing_node_labels: # Expansão geral
+            prompt_template_str = """
+            Você é um arquiteto de conhecimento especialista chamado Synapse. Sua tarefa é expandir um grafo.
+            O usuário quer explorar o conceito: "{query}"
+            O grafo atual já contém: [{existing_nodes}]
+            
+            Gere 3 a 5 NOVOS nós relacionados ao conceito "{query}".
+            IMPORTANTE: NÃO gere nós para conceitos que já existem.
+            Os novos nós devem se conectar ao nó de origem ("{query}").
+            Crie arestas que descrevam as novas relações. Cada novo nó deve ter um resumo conciso.
+            {format_instructions}
+            """
+        else: # Geração inicial
+            prompt_template_str = """
+            Você é um arquiteto de conhecimento especialista chamado Synapse. Sua tarefa é criar um grafo de conhecimento.
+            Para a pergunta do usuário: "{query}"
+            Gere 5 a 7 nós interconectados que explorem o tópico.
+            {format_instructions}
+            """
 
         prompt = ChatPromptTemplate.from_template(
-            template=prompt_template,
+            template=prompt_template_str,
             partial_variables={"format_instructions": parser.get_format_instructions()},
         )
-
-        # 4. Cria a "cadeia" (chain) que une os componentes
-        # Prompt -> Modelo de IA -> Parser de Saída
+        
         chain = prompt | model | parser
-
-        # 5. Invoca a cadeia com a query do usuário de forma assíncrona
-        # '.ainvoke' é a versão assíncrona do '.invoke'
-        response = await chain.ainvoke({"query": query})
-
+        
+        response = await chain.ainvoke({
+            "query": query, 
+            "existing_nodes": existing_nodes_str
+        })
+        
         return response
 
     except Exception as e:
-        # Tratamento de erro robusto caso a chamada à API da IA falhe
         print(f"Erro ao gerar o grafo com a IA: {e}")
-        # Re-lança a exceção para que o FastAPI possa capturá-la e retornar um erro 500
         raise
