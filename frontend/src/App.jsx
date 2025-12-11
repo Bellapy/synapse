@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { Search, LoaderCircle } from 'lucide-react';
 import useGraphStore from './store/graphStore';
 import GraphCanvas from './components/graphCanvas';
+// 1. Importe o novo componente que criamos
+import SidePanel from './components/SidePanel';
 
 function App() {
   const [query, setQuery] = useState('');
@@ -44,6 +46,9 @@ function App() {
           {error && <p className="text-red-400 text-center mt-2">{error}</p>}
         </form>
       </div>
+      
+      {/* 2. Renderize o componente SidePanel. Ele gerencia sua própria visibilidade internamente. */}
+      <SidePanel />
     </div>
   );
 }

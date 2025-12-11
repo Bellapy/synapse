@@ -1,11 +1,14 @@
-import React, { useMemo } from 'react';
-import ForceGraph3D from "react-force-graph-3d";
+// frontend/src/components/GraphCanvas.jsx
+import React, { useMemo, useRef, useEffect } from 'react';
+import ForceGraph3D from 'react-force-graph-3d';
 import useGraphStore from '../store/graphStore';
 import * as THREE from 'three';
-
+// CORREÇÃO: Importar os componentes corretos da biblioteca 'postprocessing'
+import { BloomEffect, EffectPass } from 'postprocessing';
 
 const GraphCanvas = () => {
-  const { nodes, edges } = useGraphStore();
+  const { nodes, edges, setSelectedNode, clearSelectedNode } = useGraphStore();
+  const graphRef = useRef();
 
   const graphData = useMemo(() => ({
     nodes,
@@ -16,73 +19,89 @@ const GraphCanvas = () => {
     }))
   }), [nodes, edges]);
 
+  // Efeito para adicionar o Bloom
+  useEffect(() => {
+    if (graphRef.current) {
+      // CORREÇÃO: A biblioteca 'postprocessing' funciona em duas etapas.
+
+      // 1. Crie o EFEITO (o que ele faz)
+      const bloomEffect = new BloomEffect({
+        luminanceThreshold: 0.1,
+        luminanceSmoothing: 0.2,
+        intensity: 2.0, // Aumentei um pouco a intensidade para o efeito ser mais notável
+        radius: 0.6,
+      });
+
+      // 2. Crie o PASSO (como ele se encaixa no pipeline de renderização)
+      // O EffectPass precisa da câmera para funcionar corretamente.
+      const effectPass = new EffectPass(graphRef.current.camera(), bloomEffect);
+      
+      // 3. Adicione o PASSO ao compositor.
+      graphRef.current.postProcessingComposer().addPass(effectPass);
+    }
+  }, []);
+
   if (!nodes || nodes.length === 0) {
     return null;
   }
 
-  // A função que cria o objeto 3D para cada nó foi completamente refeita
-  const getNodeObject = (node) => {
-    // 1. Criar um 'Group' que conterá o núcleo e a aura
-    const group = new THREE.Group();
-
-    // 2. Criar a aura de brilho (a esfera maior e semitransparente)
-    const auraGeometry = new THREE.SphereGeometry(6, 32, 32);
-    
-    // Este é o truque: um material customizado que fica mais transparente nas bordas
-    const auraMaterial = new THREE.ShaderMaterial({
+  // O shader do nó permanece o mesmo, está perfeito.
+  const getNodeObject = () => {
+    const geometry = new THREE.SphereGeometry(5, 32, 32);
+    const material = new THREE.ShaderMaterial({
       uniforms: {
-        'c': { type: 'f', value: 0.8 },
-        'p': { type: 'f', value: 3.0 },
-        glowColor: { type: 'c', value: new THREE.Color('#22d3ee') },
+        coreColor: { value: new THREE.Color('#ffffff') },
+        glowColor: { value: new THREE.Color('#22d3ee') },
       },
       vertexShader: `
         varying vec3 vNormal;
         void main() {
-          vNormal = normalize( normalMatrix * normal );
-          gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+          vNormal = normalize(normalMatrix * normal);
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }
       `,
       fragmentShader: `
+        uniform vec3 coreColor;
         uniform vec3 glowColor;
         varying vec3 vNormal;
         void main() {
-          float intensity = pow( 0.8 - dot( vNormal, vec3( 0.0, 0.0, 1.0 ) ), 3.0 );
-          gl_FragColor = vec4( glowColor, 1.0 ) * intensity;
+          float intensity = dot(vNormal, vec3(0.0, 0.0, 1.0));
+          float falloff = pow(intensity, 4.0);
+          vec3 blendedColor = mix(glowColor, coreColor, falloff);
+          float alpha = falloff * 0.8 + 0.2;
+          gl_FragColor = vec4(blendedColor, alpha);
         }
       `,
-      side: THREE.BackSide, // Renderiza o lado de dentro da esfera
       blending: THREE.AdditiveBlending,
-      transparent: true
+      transparent: true,
+      depthWrite: false,
     });
-    
-    const aura = new THREE.Mesh(auraGeometry, auraMaterial);
-    aura.scale.set(1.1, 1.1, 1.1); // Ligeiramente maior que o núcleo
-    group.add(aura);
-
-    // 3. Criar o núcleo do nó (a esfera menor e mais sólida)
-    const coreGeometry = new THREE.SphereGeometry(3, 32, 32);
-    const coreMaterial = new THREE.MeshBasicMaterial({ color: '#ffffff' });
-    const core = new THREE.Mesh(coreGeometry, coreMaterial);
-    group.add(core);
-
-    return group;
+    return new THREE.Mesh(geometry, material);
   };
-
 
   return (
     <div className="absolute top-0 left-0 w-full h-full z-0">
       <ForceGraph3D
+        ref={graphRef}
         graphData={graphData}
         backgroundColor="rgba(0,0,0,0)"
         nodeLabel="label"
         linkLabel="name"
-        
-        // Substituindo a antiga implementação pelo nosso novo método
         nodeThreeObject={getNodeObject}
-        
         linkColor={() => '#d946ef'}
         linkWidth={0.3}
         linkOpacity={0.5}
+        onNodeClick={(node) => {
+          const distance = 40;
+          const distRatio = 1 + distance / Math.hypot(node.x, node.y, node.z);
+          graphRef.current.cameraPosition(
+            { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio },
+            node,
+            3000
+          );
+          setSelectedNode(node);
+        }}
+        onBackgroundClick={clearSelectedNode}
       />
     </div>
   );
