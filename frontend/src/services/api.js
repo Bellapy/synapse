@@ -1,15 +1,35 @@
 // frontend/src/services/api.js
 
+// MODIFICATION START: Importamos nossos dados falsos
+import { mockInitialGraph, mockExpansionGraph, mockNodeDetails } from './mockData';
+// MODIFICATION END
+
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+// MODIFICATION START: Lemos a nossa chave de controle do ambiente
+const useMock = import.meta.env.VITE_MOCK_API === 'true';
+// MODIFICATION END
 
 /**
- * Chama a API para gerar ou expandir um grafo.
- * @param {string} query - O conceito a ser explorado.
- * @param {string[]} [existingNodeLabels] - (Opcional) Labels dos nós existentes.
- * @param {string} [expansionType] - (Opcional) 'general' ou 'counter'.
- * @returns {Promise<object>} Os dados do grafo.
+ * Simula um atraso de rede para que os spinners de carregamento ainda apareçam.
+ * @param {any} data - Os dados a serem retornados após o atraso.
+ * @param {number} delay - O tempo de atraso em milissegundos.
+ * @returns {Promise<any>}
  */
+const mockFetch = (data, delay = 500) => 
+  new Promise(resolve => setTimeout(() => resolve(data), delay));
+
+
 export async function generateGraph(query, existingNodeLabels = null, expansionType = 'general') {
+  // MODIFICATION START: Lógica do interruptor
+  if (useMock) {
+    console.warn("API MOCK ATIVA: Retornando dados falsos para generateGraph.");
+    if (existingNodeLabels) {
+      return mockFetch(mockExpansionGraph);
+    }
+    return mockFetch(mockInitialGraph);
+  }
+  // MODIFICATION END
+
   try {
     const requestBody = {
       query: query,
@@ -34,13 +54,15 @@ export async function generateGraph(query, existingNodeLabels = null, expansionT
   }
 }
 
-/**
- * Busca os detalhes contextuais de um nó na API.
- * @param {string} nodeLabel - O label do nó selecionado.
- * @param {string} originalQuery - A pergunta inicial do usuário.
- * @returns {Promise<object>} Os detalhes do nó (type_tag, contextual_summary, etc.).
- */
 export async function fetchNodeDetails(nodeLabel, originalQuery) {
+  // MODIFICATION START: Lógica do interruptor
+  if (useMock) {
+    console.warn("API MOCK ATIVA: Retornando dados falsos para fetchNodeDetails.");
+    // Retorna uma cópia para evitar mutações acidentais do objeto original
+    return mockFetch({ ...mockNodeDetails, label: nodeLabel });
+  }
+  // MODIFICATION END
+
   try {
     const requestBody = {
       node_label: nodeLabel,
