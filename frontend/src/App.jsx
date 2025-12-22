@@ -2,13 +2,18 @@
 import React, { useState } from 'react';
 import { Search, LoaderCircle } from 'lucide-react';
 import useGraphStore from './store/graphStore';
-import GraphCanvas from './components/graphCanvas';
-// 1. Importe o novo componente que criamos
+import GraphCanvas from './components/GraphCanvas';
 import SidePanel from './components/SidePanel';
+// MODIFICATION START: A importação do ParticleBackground foi removida.
+// import ParticleBackground from './components/ParticleBackground'; 
+// MODIFICATION END
 
 function App() {
   const [query, setQuery] = useState('');
-  const { fetchGraphData, isLoading, error } = useGraphStore();
+
+  const fetchGraphData = useGraphStore(state => state.fetchGraphData);
+  const isLoading = useGraphStore(state => state.isLoading);
+  const error = useGraphStore(state => state.error);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -18,11 +23,10 @@ function App() {
   };
 
   return (
-    <div className="relative min-h-screen w-full bg-space-gradient overflow-hidden">
-      {/* O Canvas do Grafo fica no fundo */}
+    // MODIFICATION START: Revertemos para a estrutura original com o fundo gradiente.
+    <div className="relative min-h-screen w-full bg-galaxy-gradient overflow-hidden">
       <GraphCanvas />
 
-      {/* O painel de busca flutua sobre o grafo */}
       <div className="absolute top-8 left-1/2 -translate-x-1/2 z-10 w-full max-w-lg px-4">
         <form onSubmit={handleSearch} className="glass-panel p-4">
           <div className="relative">
@@ -46,10 +50,10 @@ function App() {
           {error && <p className="text-red-400 text-center mt-2">{error}</p>}
         </form>
       </div>
-      
-      {/* 2. Renderize o componente SidePanel. Ele gerencia sua própria visibilidade internamente. */}
+
       <SidePanel />
     </div>
+    // MODIFICATION END
   );
 }
 
