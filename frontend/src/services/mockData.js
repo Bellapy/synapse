@@ -1,6 +1,4 @@
-// frontend/src/services/mockData.js
 
-// Simula a resposta para a primeira busca.
 export const mockInitialGraph = {
   nodes: [
     { id: "1", label: "Filosofia", type: "concept", summary: "Estudo de questões fundamentais sobre existência, conhecimento, valores, razão, mente e linguagem." },
@@ -18,8 +16,7 @@ export const mockInitialGraph = {
   ],
 };
 
-// Simula a resposta ao expandir o nó "Existencialismo".
-// IMPORTANTE: Inclui o nó de origem para manter a integridade do grafo.
+
 export const mockExpansionGraph = {
     nodes: [
         { id: "4", label: "Existencialismo", type: "concept", summary: "Corrente filosófica que enfatiza a liberdade individual, responsabilidade e subjetividade." },

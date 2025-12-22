@@ -107,11 +107,11 @@ const useGraphStore = create(devtools((set, get) => ({
     set({ selectedNode: null, selectedNodeDetails: null }, false, 'CLEAR_SELECTED_NODE');
   },
   
-  // MODIFICATION START: Ação para limpar o grafo completamente
+  
   clearGraph: () => {
     set({ nodes: [], edges: [], originalQuery: "" }, false, 'CLEAR_GRAPH');
   },
-  // MODIFICATION END
+  
 
 }), { name: "SynapseGraphStore" }));
 

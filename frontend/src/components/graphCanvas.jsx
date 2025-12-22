@@ -14,7 +14,7 @@ const GraphCanvas = () => {
   const graphData = useMemo(() => ({
     nodes,
     links: edges.map(edge => ({
-      ...edge, // Propaga todos os campos, incluindo 'origin'
+      ...edge,
       source: edge.source,
       target: edge.target,
       name: edge.relation,
@@ -31,16 +31,16 @@ const GraphCanvas = () => {
     }
   }, []);
 
-  // MODIFICATION START: Lógica de coloração condicional
+  
   const getNodeColor = (node) => {
     switch (node.origin) {
       case 'general':
-        return '#34d399'; // Verde para expansão
+        return '#34d399'; 
       case 'counter':
-        return '#f43f5e'; // Vermelho para contra-argumento
+        return '#f43f5e'; 
       case 'initial':
       default:
-        return '#22d3ee'; // Ciano padrão
+        return '#22d3ee'; 
     }
   };
 
@@ -52,7 +52,7 @@ const GraphCanvas = () => {
         return '#f43f5e';
       case 'initial':
       default:
-        return '#d946ef'; // Magenta padrão
+        return '#d946ef'; 
     }
   };
 
@@ -61,62 +61,8 @@ const GraphCanvas = () => {
     const material = new THREE.ShaderMaterial({
       uniforms: {
         coreColor: { value: new THREE.Color('#ffffff') },
+        // Agora getNodeColor está no mesmo escopo, então não precisamos de 'this'
         glowColor: { value: new THREE.Color(getNodeColor(node)) },
-      },
-      vertexShader: `...`, // (Vertex shader sem alterações)
-      fragmentShader: `...`, // (Fragment shader sem alterações)
-      blending: THREE.AdditiveBlending,
-      transparent: true,
-      depthWrite: false,
-    });
-    return new THREE.Mesh(geometry, material);
-  };
-  // MODIFICATION END
-
-  return (
-    <div ref={ref} className="absolute top-0 left-0 w-full h-full z-0">
-      {/* Adicionamos a checagem de bounds para evitar renderizar com tamanho 0 */}
-      {bounds.width > 0 && (
-        <ForceGraph3D
-          ref={graphRef}
-          width={bounds.width}
-          height={bounds.height}
-          graphData={graphData}
-          backgroundColor="rgba(0,0,0,0)"
-          nodeLabel="label"
-          linkLabel="name"
-          // MODIFICATION START: Usamos nossas novas funções de coloração
-          nodeThreeObject={getNodeObject}
-          linkColor={getLinkColor}
-          // MODIFICATION END
-          linkWidth={0.3}
-          linkOpacity={0.5}
-          onNodeClick={(node) => {
-            const distance = 40;
-            const distRatio = 1 + distance / Math.hypot(node.x, node.y, node.z);
-            graphRef.current.cameraPosition(
-              { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio },
-              node, 3000
-            );
-            setSelectedNode(node);
-          }}
-          onNodeDoubleClick={(node) => {
-            clearSelectedNode(); 
-            expandNode(node.label);
-          }}
-          onBackgroundClick={clearSelectedNode}
-        />
-      )}
-    </div>
-  );
-};
-// Adicionando o código do shader que foi omitido para manter o post conciso
-GraphCanvas.prototype.getNodeObject = function(node) {
-    const geometry = new THREE.SphereGeometry(5, 32, 32);
-    const material = new THREE.ShaderMaterial({
-      uniforms: {
-        coreColor: { value: new THREE.Color('#ffffff') },
-        glowColor: { value: new THREE.Color(this.getNodeColor(node)) },
       },
       vertexShader: `
         varying vec3 vNormal;
@@ -142,6 +88,45 @@ GraphCanvas.prototype.getNodeObject = function(node) {
       depthWrite: false,
     });
     return new THREE.Mesh(geometry, material);
+  };
+
+  if (!nodes || nodes.length === 0) {
+    return null;
+  }
+
+  return (
+    <div ref={ref} className="absolute top-0 left-0 w-full h-full z-0">
+      {bounds.width > 0 && (
+        <ForceGraph3D
+          ref={graphRef}
+          width={bounds.width}
+          height={bounds.height}
+          graphData={graphData}
+          backgroundColor="rgba(0,0,0,0)"
+          nodeLabel="label"
+          linkLabel="name"
+          nodeThreeObject={getNodeObject}
+          linkColor={getLinkColor}
+          linkWidth={0.3}
+          linkOpacity={0.5}
+          onNodeClick={(node) => {
+            const distance = 40;
+            const distRatio = 1 + distance / Math.hypot(node.x, node.y, node.z);
+            graphRef.current.cameraPosition(
+              { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio },
+              node, 3000
+            );
+            setSelectedNode(node);
+          }}
+          onNodeDoubleClick={(node) => {
+            clearSelectedNode(); 
+            expandNode(node.label);
+          }}
+          onBackgroundClick={clearSelectedNode}
+        />
+      )}
+    </div>
+  );
 };
 
 export default GraphCanvas;

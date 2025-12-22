@@ -1,4 +1,4 @@
-// frontend/src/App.jsx
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Search, LoaderCircle, Sparkles } from 'lucide-react';

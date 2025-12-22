@@ -1,9 +1,8 @@
-# backend/services/node_detail_generator.py
 
 import os
 from dotenv import load_dotenv
-# --- CORREÇÃO AQUI ---
-from pydantic import BaseModel # Adicione esta importação
+
+from pydantic import BaseModel
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -16,8 +15,7 @@ async def generate_contextual_details(original_query: str, node_label: str) -> N
     Gera detalhes contextuais para um nó específico, baseado na pergunta original do usuário.
     """
     try:
-        # PydanticOutputParser garante que a IA responda no formato exato que precisamos
-        # Agora que importamos BaseModel, esta classe é válida.
+     
         class NodeDetailParser(BaseModel):
             label: str
             type_tag: str

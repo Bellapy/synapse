@@ -1,18 +1,18 @@
 // frontend/src/services/api.js
 
-// MODIFICATION START: Importamos nossos dados falsos
+
 import { mockInitialGraph, mockExpansionGraph, mockNodeDetails } from './mockData';
-// MODIFICATION END
+
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
-// MODIFICATION START: Lemos a nossa chave de controle do ambiente
+
 const useMock = import.meta.env.VITE_MOCK_API === 'true';
-// MODIFICATION END
+
 
 /**
- * Simula um atraso de rede para que os spinners de carregamento ainda apareçam.
- * @param {any} data - Os dados a serem retornados após o atraso.
- * @param {number} delay - O tempo de atraso em milissegundos.
+
+ * @param {any} data
+ * @param {number} delay 
  * @returns {Promise<any>}
  */
 const mockFetch = (data, delay = 500) => 
@@ -20,7 +20,7 @@ const mockFetch = (data, delay = 500) =>
 
 
 export async function generateGraph(query, existingNodeLabels = null, expansionType = 'general') {
-  // MODIFICATION START: Lógica do interruptor
+  
   if (useMock) {
     console.warn("API MOCK ATIVA: Retornando dados falsos para generateGraph.");
     if (existingNodeLabels) {
@@ -28,7 +28,7 @@ export async function generateGraph(query, existingNodeLabels = null, expansionT
     }
     return mockFetch(mockInitialGraph);
   }
-  // MODIFICATION END
+  
 
   try {
     const requestBody = {
@@ -55,13 +55,13 @@ export async function generateGraph(query, existingNodeLabels = null, expansionT
 }
 
 export async function fetchNodeDetails(nodeLabel, originalQuery) {
-  // MODIFICATION START: Lógica do interruptor
+  
   if (useMock) {
     console.warn("API MOCK ATIVA: Retornando dados falsos para fetchNodeDetails.");
     // Retorna uma cópia para evitar mutações acidentais do objeto original
     return mockFetch({ ...mockNodeDetails, label: nodeLabel });
   }
-  // MODIFICATION END
+ 
 
   try {
     const requestBody = {
