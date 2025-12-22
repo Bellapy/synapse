@@ -7,14 +7,17 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Paleta definida no documento de escopo
         'deep-space': '#030712',
+        // Cores base
         'electric-cyan': '#22d3ee',
         'magenta-glow': '#d946ef',
+        // MODIFICATION START: Novas cores para os tipos de nós
+        'counter-red': '#f43f5e', // rose-500
+        'expand-green': '#34d399', // emerald-400
+        // MODIFICATION END
       },
       backgroundImage: {
-        // Gradiente radial para dar profundidade ao "espaço"
-        'space-gradient': 'radial-gradient(circle at center, #111827 0%, #030712 100%)',
+        'galaxy-gradient': 'radial-gradient(ellipse at 70% 30%, #1e1b4b 0%, #030712 60%)',
       }
     },
   },
