@@ -6,7 +6,7 @@
     Uma ferramenta de exploração visual que transforma dúvidas em constelações de conhecimento.
   </p>
   <p align="center">
-    <a href="https://synapse-graph.vercel.app/"><strong>Ver Aplicação Ao Vivo »</strong></a>
+    <a href="https://synapse-six-inky.vercel.app/"><strong>Ver Aplicação Ao Vivo »</strong></a>
     obs: caso não funcionar, espere alguns minutos até que a ia possa gerar novamente! esse projeto utiliza a versão gratuita. 
   </p>
 </div>
