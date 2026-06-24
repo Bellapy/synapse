@@ -22,8 +22,10 @@ async def generate_contextual_details(original_query: str, node_label: str) -> N
             contextual_summary: str
         
         parser = PydanticOutputParser(pydantic_object=NodeDetailParser)
+        
+        AI_MODEL_NAME = os.getenv("AI_MODEL_NAME", "gemini-3-flash-preview")
 
-        model = ChatGoogleGenerativeAI(model="gemini-2.5-flash-lite-preview-09-2025", temperature=0.3)
+        model = ChatGoogleGenerativeAI(model=AI_MODEL_NAME, temperature=0.3)
 
         prompt_template = """
         Você é um especialista em síntese de conhecimento chamado Synapse. Sua tarefa é explicar um conceito de forma contextual.
