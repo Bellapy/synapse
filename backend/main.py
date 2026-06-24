@@ -1,17 +1,25 @@
-
 import os
+import json
+import hashlib
+import redis.asyncio as redis
 from dotenv import load_dotenv
+
+import logging
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-
 
 from models.graph import GraphResponse, QueryRequest, NodeDetailRequest, NodeDetailResponse
 from services.graph_generator import generate_graph_from_query
 from services.node_detail_generator import generate_contextual_details
 
-
 load_dotenv()
+
+REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
+redis_client = redis.from_url(REDIS_URL, decode_responses=True)
 
 app = FastAPI(
     title="Synapse API",
@@ -21,19 +29,14 @@ app = FastAPI(
     redoc_url="/api/redoc"
 )
 
-
 origins = [
     os.getenv("FRONTEND_URL", "http://localhost:5173"),
 ]
 
 vercel_url = os.getenv("VERCEL_URL")
 if vercel_url:
-    
-    
     origins.append(f"https://{vercel_url}")
- 
     origins.append(f"https://{vercel_url.split('-git-')[0]}")
-
 
 app.add_middleware(
     CORSMiddleware,
@@ -45,34 +48,40 @@ app.add_middleware(
 
 @app.get("/api/health", summary="Health Check", tags=["System"])
 def read_root():
-  
     return {"status": "ok"}
 
 
 @app.post("/api/generate-graph", response_model=GraphResponse, summary="Generate or Expand Knowledge Graph", tags=["Graph"])
 async def generate_graph(request: QueryRequest):
-    """
-    Gera ou expande um grafo de conhecimento.
-    - Para geração inicial, envie apenas `query`.
-    - Para expansão, envie `query` (o label do nó a expandir), `existing_node_labels`, e `expansion_type`.
-    """
+
+    req_dict = request.model_dump()
+    req_string = json.dumps(req_dict, sort_keys=True)
+    cache_key = f"graph_cache:{hashlib.md5(req_string.encode()).hexdigest()}"
+
     try:
+        cached_result = await redis_client.get(cache_key)
+        if cached_result:
+            logger.info("Retornando o grafo instantaneamente do Redis.")
+            return json.loads(cached_result)
+
+        print("🧠 Gerando via IA (Isso pode levar alguns segundos)...")
         graph_data = await generate_graph_from_query(
             request.query, 
             request.existing_node_labels,
             request.expansion_type
         )
+
+        await redis_client.set(cache_key, graph_data.model_dump_json(), ex=86400)
+        
         return graph_data
     except Exception as e:
-        print(f"Erro detalhado no endpoint /api/generate-graph: {e}")
+        logger.info(f"Erro detalhado no endpoint /api/generate-graph: {e}")
         raise HTTPException(status_code=500, detail="Ocorreu um erro interno ao tentar gerar o grafo.")
 
 
 @app.post("/api/node-details", response_model=NodeDetailResponse, summary="Get Contextual Node Details", tags=["Graph"])
 async def get_node_details(request: NodeDetailRequest):
-    """
-    Busca detalhes contextuais sobre um nó específico para exibir no painel de inspeção.
-    """
+
     try:
         details_from_ai = await generate_contextual_details(
             request.original_query,
@@ -80,7 +89,7 @@ async def get_node_details(request: NodeDetailRequest):
         )
         return details_from_ai
     except Exception as e:
-        print(f"Erro detalhado no endpoint /api/node-details: {e}")
+        logger.info(f"Erro detalhado no endpoint /api/node-details: {e}")
         raise HTTPException(status_code=500, detail="Ocorreu um erro interno ao obter os detalhes do nó.")
 
 
@@ -88,4 +97,4 @@ if __name__ == "__main__":
     import uvicorn
     
     port = int(os.getenv("PORT", 8000))
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False) 
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
