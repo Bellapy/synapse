@@ -29,7 +29,6 @@ export const mockExpansionGraph = {
     ]
 };
 
-// Simula a resposta ao pedir detalhes de um nó.
 export const mockNodeDetails = {
     label: "Existencialismo",
     type_tag: "Corrente Filosófica",
