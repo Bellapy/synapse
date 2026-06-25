@@ -4,18 +4,21 @@ import ForceGraph3D from 'react-force-graph-3d';
 import useGraphStore from '../store/graphStore';
 import * as THREE from 'three';
 import { BloomEffect, EffectPass } from 'postprocessing';
+import { SynapseNode } from '../types';
+
+const ForceGraph3DComponent = ForceGraph3D as any;
 
 const GraphCanvas = () => {
   const { nodes, edges, setSelectedNode, clearSelectedNode, expandNode } = useGraphStore();
-  const graphRef = useRef();
+  const graphRef = useRef<any>();
   const [ref, bounds] = useMeasure();
 
   const graphData = useMemo(() => ({
     nodes,
     links: edges.map(edge => ({
       ...edge,
-      source: edge.source,
-      target: edge.target,
+      source: typeof edge.source === 'object' ? (edge.source as any).id : edge.source,
+      target: typeof edge.target === 'object' ? (edge.target as any).id : edge.target,
       name: edge.relation,
     }))
   }), [nodes, edges]);
@@ -30,8 +33,7 @@ const GraphCanvas = () => {
     }
   }, []);
 
-  
-  const getNodeColor = (node) => {
+  const getNodeColor = (node: SynapseNode) => {
     switch (node.origin) {
       case 'general':
         return '#34d399'; 
@@ -43,7 +45,7 @@ const GraphCanvas = () => {
     }
   };
 
-  const getLinkColor = (link) => {
+  const getLinkColor = (link: any) => {
     switch (link.origin) {
       case 'general':
         return '#34d399';
@@ -55,7 +57,7 @@ const GraphCanvas = () => {
     }
   };
 
-  const getNodeObject = (node) => {
+  const getNodeObject = (node: SynapseNode) => {
     const geometry = new THREE.SphereGeometry(5, 32, 32);
     const material = new THREE.ShaderMaterial({
       uniforms: {
@@ -95,7 +97,7 @@ const GraphCanvas = () => {
   return (
     <div ref={ref} className="absolute top-0 left-0 w-full h-full z-0">
       {bounds.width > 0 && (
-        <ForceGraph3D
+        <ForceGraph3DComponent
           ref={graphRef}
           width={bounds.width}
           height={bounds.height}
@@ -107,16 +109,16 @@ const GraphCanvas = () => {
           linkColor={getLinkColor}
           linkWidth={0.3}
           linkOpacity={0.5}
-          onNodeClick={(node) => {
+          onNodeClick={(node: any) => {
             const distance = 40;
-            const distRatio = 1 + distance / Math.hypot(node.x, node.y, node.z);
+            const distRatio = 1 + distance / Math.hypot(node.x || 0, node.y || 0, node.z || 0);
             graphRef.current.cameraPosition(
-              { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio },
+              { x: (node.x || 0) * distRatio, y: (node.y || 0) * distRatio, z: (node.z || 0) * distRatio },
               node, 3000
             );
             setSelectedNode(node);
           }}
-          onNodeDoubleClick={(node) => {
+          onNodeDoubleClick={(node: any) => {
             clearSelectedNode(); 
             expandNode(node.label);
           }}

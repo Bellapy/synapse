@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Search, LoaderCircle, Sparkles } from 'lucide-react';
@@ -13,7 +12,7 @@ function App() {
   const error = useGraphStore(state => state.error);
   const hasNodes = useGraphStore(state => state.nodes.length > 0);
 
-  const handleSearch = (e) => {
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim() && !isLoading) {
       fetchGraphData(query);
@@ -24,7 +23,6 @@ function App() {
     <main className="relative min-h-screen w-full bg-galaxy-gradient overflow-hidden">
       <GraphCanvas />
 
-      {/* Container para a barra de busca, que se anima */}
       <motion.div
         className="absolute w-full max-w-lg px-4 z-10"
         initial={{ top: '50%', left: '50%', x: '-50%', y: '-50%' }}
