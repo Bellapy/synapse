@@ -1,4 +1,3 @@
-// frontend/src/components/GraphCanvas.jsx
 import React, { useMemo, useRef, useEffect } from 'react';
 import useMeasure from 'react-use-measure';
 import ForceGraph3D from 'react-force-graph-3d';
@@ -61,7 +60,6 @@ const GraphCanvas = () => {
     const material = new THREE.ShaderMaterial({
       uniforms: {
         coreColor: { value: new THREE.Color('#ffffff') },
-        // Agora getNodeColor está no mesmo escopo, então não precisamos de 'this'
         glowColor: { value: new THREE.Color(getNodeColor(node)) },
       },
       vertexShader: `
