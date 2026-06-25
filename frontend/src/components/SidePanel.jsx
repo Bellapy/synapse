@@ -1,4 +1,3 @@
-// frontend/src/components/SidePanel.jsx
 import React from 'react';
 import useGraphStore from '../store/graphStore';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -16,14 +15,14 @@ const SidePanel = () => {
   const handleExpand = () => {
     if (selectedNode) {
       expandNode(selectedNode.label, 'general');
-      clearSelectedNode(); // Fecha o painel após a ação
+      clearSelectedNode(); 
     }
   };
 
   const handleCounter = () => {
     if (selectedNode) {
       expandNode(selectedNode.label, 'counter');
-      clearSelectedNode(); // Fecha o painel após a ação
+      clearSelectedNode(); 
     }
   };
 
