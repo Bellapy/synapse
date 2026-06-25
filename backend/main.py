@@ -1,22 +1,24 @@
 import os
 import json
 import hashlib
+import logging
 import redis.asyncio as redis
 from dotenv import load_dotenv
 
-import logging
-
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
-logger = logging.getLogger(__name__)
-
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.graph import GraphResponse, QueryRequest, NodeDetailRequest, NodeDetailResponse
 from services.graph_generator import generate_graph_from_query
 from services.node_detail_generator import generate_contextual_details
+from database import get_db
+from models.history import QueryHistory
 
 load_dotenv()
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 redis_client = redis.from_url(REDIS_URL, decode_responses=True)
@@ -52,7 +54,18 @@ def read_root():
 
 
 @app.post("/api/generate-graph", response_model=GraphResponse, summary="Generate or Expand Knowledge Graph", tags=["Graph"])
-async def generate_graph(request: QueryRequest):
+async def generate_graph(request: QueryRequest, db: AsyncSession = Depends(get_db)):
+
+    try:
+        new_history = QueryHistory(
+            query=request.query,
+            expansion_type=request.expansion_type
+        )
+        db.add(new_history)
+        await db.commit()
+        logger.info(f"Busca salva no PostgreSQL: '{request.query}'")
+    except Exception as e:
+        logger.error(f"Erro ao salvar histórico no banco de dados: {e}")
 
     req_dict = request.model_dump()
     req_string = json.dumps(req_dict, sort_keys=True)
@@ -61,10 +74,10 @@ async def generate_graph(request: QueryRequest):
     try:
         cached_result = await redis_client.get(cache_key)
         if cached_result:
-            logger.info("Retornando o grafo instantaneamente do Redis.")
+            logger.info("Retornando grafo do Redis.")
             return json.loads(cached_result)
 
-        print("🧠 Gerando via IA (Isso pode levar alguns segundos)...")
+        logger.info("Gerando via IA...")
         graph_data = await generate_graph_from_query(
             request.query, 
             request.existing_node_labels,
@@ -75,7 +88,7 @@ async def generate_graph(request: QueryRequest):
         
         return graph_data
     except Exception as e:
-        logger.info(f"Erro detalhado no endpoint /api/generate-graph: {e}")
+        logger.error(f"Erro detalhado no endpoint /api/generate-graph: {e}")
         raise HTTPException(status_code=500, detail="Ocorreu um erro interno ao tentar gerar o grafo.")
 
 
@@ -89,7 +102,7 @@ async def get_node_details(request: NodeDetailRequest):
         )
         return details_from_ai
     except Exception as e:
-        logger.info(f"Erro detalhado no endpoint /api/node-details: {e}")
+        logger.error(f"Erro detalhado no endpoint /api/node-details: {e}")
         raise HTTPException(status_code=500, detail="Ocorreu um erro interno ao obter os detalhes do nó.")
 
 
