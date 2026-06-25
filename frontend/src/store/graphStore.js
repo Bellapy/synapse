@@ -12,6 +12,7 @@ const useGraphStore = create(devtools((set, get) => ({
   selectedNode: null,
   selectedNodeDetails: null,
   originalQuery: "",
+  cachedNodeDetails: {},
 
   fetchGraphData: async (query) => {
     set({ isLoading: true, error: null, originalQuery: query }, false, 'FETCH_GRAPH_DATA_START');
@@ -82,9 +83,20 @@ const useGraphStore = create(devtools((set, get) => ({
       set({ selectedNode: null, selectedNodeDetails: null }, false, 'CLEAR_SELECTED_NODE');
       return;
     }
+
+    const { cachedNodeDetails, originalQuery, edges, nodes } = get();
+
+    if (cachedNodeDetails && cachedNodeDetails[node.label]) {
+      set({ 
+        selectedNode: node, 
+        selectedNodeDetails: cachedNodeDetails[node.label], 
+        isPanelLoading: false 
+      }, false, 'FETCH_NODE_DETAILS_CACHE_HIT');
+      return;
+    }
+
     set({ selectedNode: node, isPanelLoading: true, selectedNodeDetails: null, error: null }, false, 'SET_SELECTED_NODE');
     try {
-      const { originalQuery, edges, nodes } = get();
       const details = await fetchNodeDetails(node.label, originalQuery);
       
       const connections = edges
@@ -96,8 +108,15 @@ const useGraphStore = create(devtools((set, get) => ({
         })
         .filter(Boolean);
       details.connections = connections;
-      
-      set({ selectedNodeDetails: details, isPanelLoading: false }, false, 'FETCH_NODE_DETAILS_SUCCESS');
+   
+      set(state => ({
+        selectedNodeDetails: details,
+        isPanelLoading: false,
+        cachedNodeDetails: {
+          ...state.cachedNodeDetails,
+          [node.label]: details
+        }
+      }), false, 'FETCH_NODE_DETAILS_SUCCESS');
     } catch (error) {
       set({ error: error.message, isPanelLoading: false }, false, 'FETCH_NODE_DETAILS_ERROR');
     }
@@ -109,7 +128,7 @@ const useGraphStore = create(devtools((set, get) => ({
   
   
   clearGraph: () => {
-    set({ nodes: [], edges: [], originalQuery: "" }, false, 'CLEAR_GRAPH');
+    set({ nodes: [], edges: [], originalQuery: "", cachedNodeDetails: {} }, false, 'CLEAR_GRAPH');
   },
   
 
