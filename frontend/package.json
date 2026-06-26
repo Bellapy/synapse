@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.101.1",
     "framer-motion": "^11.2.10",
     "lucide-react": "^0.395.0",
     "postprocessing": "^6.35.5",
