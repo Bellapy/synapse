@@ -1,5 +1,6 @@
 import logging
 from fastapi import APIRouter, HTTPException, Depends
+from core.rate_limit import rate_limit
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.graph import GraphResponse, QueryRequest
@@ -12,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["Graph"])
 
-@router.post("/generate-graph", response_model=GraphResponse, summary="Generate or Expand Knowledge Graph")
+@router.post("/generate-graph", response_model=GraphResponse, summary="Generate or Expand Knowledge Graph", dependencies=[Depends(rate_limit)])
 @cache_response(expire=86400) 
 async def generate_graph(request: QueryRequest, db: AsyncSession | None = Depends(get_db)):
 
