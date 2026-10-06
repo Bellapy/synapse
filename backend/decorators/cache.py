@@ -13,11 +13,12 @@ def cache_response(expire: int = 86400):
         async def wrapper(*args, **kwargs):
 
             request_obj = kwargs.get("request")
-            if not request_obj:
-         
+            if not request_obj or redis_client is None:
                 return await func(*args, **kwargs)
 
-            req_dict = request_obj.model_dump()
+            # Usa a forma canônica (ignora caixa/espaços/ordem) quando o modelo a define.
+            payload = getattr(request_obj, "cache_payload", None)
+            req_dict = payload() if payload else request_obj.model_dump()
             req_string = json.dumps(req_dict, sort_keys=True)
             cache_key = f"{func.__name__}_cache:{hashlib.md5(req_string.encode()).hexdigest()}"
 

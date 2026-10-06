@@ -25,12 +25,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from database import Base
-import models.history  
+from database import Base, _normalize_url
+import models.history
 
 target_metadata = Base.metadata
 
-db_url = os.getenv("DATABASE_URL", "postgresql+asyncpg://synapse_user:synapse_password@postgres:5432/synapse_db")
+db_url = _normalize_url(os.getenv("DATABASE_URL", "postgresql+asyncpg://synapse_user:synapse_password@localhost:5432/synapse_db"))
 config.set_main_option("sqlalchemy.url", db_url)
 
 # other values from the config, defined by the needs of env.py,
