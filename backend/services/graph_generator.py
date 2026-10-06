@@ -7,10 +7,9 @@ from langchain_core.output_parsers import PydanticOutputParser
 from langchain_google_genai import ChatGoogleGenerativeAI
 from models.graph import GraphResponse
 from typing import List, Optional
+from core.config import AI_MODEL_NAME, AI_TIMEOUT_SECONDS, AI_MAX_RETRIES
 
 load_dotenv()
-
-AI_MODEL_NAME = os.getenv("AI_MODEL_NAME", "gemini-1.5-flash")
 
 if "GOOGLE_API_KEY" not in os.environ:
     raise ValueError("GOOGLE_API_KEY não encontrada no ambiente. Verifique seu arquivo .env")
@@ -18,7 +17,10 @@ if "GOOGLE_API_KEY" not in os.environ:
 async def generate_graph_from_query(query: str, existing_node_labels: Optional[List[str]] = None, expansion_type: str = "general") -> GraphResponse:
     try:
         parser = PydanticOutputParser(pydantic_object=GraphResponse)
-        model = ChatGoogleGenerativeAI(model=AI_MODEL_NAME, temperature=0.6)
+        model = ChatGoogleGenerativeAI(
+            model=AI_MODEL_NAME, temperature=0.6,
+            timeout=AI_TIMEOUT_SECONDS, max_retries=AI_MAX_RETRIES,
+        )
 
         existing_nodes_str = ", ".join(f"'{label}'" for label in existing_node_labels) if existing_node_labels else ""
         

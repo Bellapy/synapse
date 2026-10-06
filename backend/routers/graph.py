@@ -14,18 +14,15 @@ router = APIRouter(prefix="/api", tags=["Graph"])
 
 @router.post("/generate-graph", response_model=GraphResponse, summary="Generate or Expand Knowledge Graph")
 @cache_response(expire=86400) 
-async def generate_graph(request: QueryRequest, db: AsyncSession = Depends(get_db)):
+async def generate_graph(request: QueryRequest, db: AsyncSession | None = Depends(get_db)):
 
-    try:
-        new_history = QueryHistory(
-            query=request.query,
-            expansion_type=request.expansion_type
-        )
-        db.add(new_history)
-        await db.commit()
-        logger.info(f"Busca salva no PostgreSQL: '{request.query}'")
-    except Exception as e:
-        logger.error(f"Erro ao salvar histórico no banco de dados: {e}")
+    if db is not None:
+        try:
+            db.add(QueryHistory(query=request.query, expansion_type=request.expansion_type))
+            await db.commit()
+            logger.info(f"Busca salva no PostgreSQL: '{request.query}'")
+        except Exception as e:
+            logger.error(f"Erro ao salvar histórico no banco de dados: {e}")
 
     try:
         logger.info("Gerando grafo via IA...")

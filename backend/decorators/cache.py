@@ -13,8 +13,7 @@ def cache_response(expire: int = 86400):
         async def wrapper(*args, **kwargs):
 
             request_obj = kwargs.get("request")
-            if not request_obj:
-         
+            if not request_obj or redis_client is None:
                 return await func(*args, **kwargs)
 
             req_dict = request_obj.model_dump()
