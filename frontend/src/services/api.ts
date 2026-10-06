@@ -1,4 +1,3 @@
-import { mockInitialGraph, mockExpansionGraph, mockNodeDetails } from './mockData';
 import { GraphData, NodeDetails } from '../types';
 
 // Em produção a URL do backend DEVE vir de VITE_API_URL (configurada no Vercel).
@@ -55,6 +54,7 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
 export async function generateGraph(query: string, existingNodeLabels: string[] | null = null, expansionType: string = 'general'): Promise<GraphData> {
   if (useMock) {
     console.warn('API MOCK ATIVA: Retornando dados falsos para generateGraph.');
+    const { mockInitialGraph, mockExpansionGraph } = await import('./mockData');
     return mockFetch((existingNodeLabels ? mockExpansionGraph : mockInitialGraph) as GraphData);
   }
 
@@ -68,6 +68,7 @@ export async function generateGraph(query: string, existingNodeLabels: string[] 
 export async function fetchNodeDetails(nodeLabel: string, originalQuery: string): Promise<NodeDetails> {
   if (useMock) {
     console.warn('API MOCK ATIVA: Retornando dados falsos para fetchNodeDetails.');
+    const { mockNodeDetails } = await import('./mockData');
     return mockFetch({ ...mockNodeDetails, label: nodeLabel } as NodeDetails);
   }
 
