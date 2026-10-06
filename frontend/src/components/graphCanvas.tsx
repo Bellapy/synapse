@@ -15,7 +15,7 @@ const GraphCanvas = () => {
 
   const graphData = useMemo(() => ({
     nodes,
-    links: edges.map((edge: any) => ({
+    links: edges.map(edge => ({
       ...edge,
       source: typeof edge.source === 'object' ? (edge.source as any).id : edge.source,
       target: typeof edge.target === 'object' ? (edge.target as any).id : edge.target,
@@ -87,8 +87,7 @@ const GraphCanvas = () => {
       transparent: true,
       depthWrite: false,
     });
-  
-    return new THREE.Mesh(geometry, material as any) as any;
+    return new THREE.Mesh(geometry, material);
   };
 
   if (!nodes || nodes.length === 0) {
