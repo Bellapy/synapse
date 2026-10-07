@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { lazy, Suspense, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Search, LoaderCircle, Sparkles } from 'lucide-react';
 import useGraphStore from './store/graphStore';
-import GraphCanvas from './components/graphCanvas';
+// O canvas 3D (three.js) é pesado: só é baixado quando necessário.
+const loadGraphCanvas = () => import('./components/graphCanvas');
+const GraphCanvas = lazy(loadGraphCanvas);
 import SidePanel from './components/SidePanel';
 
 function App() {
@@ -21,7 +23,11 @@ function App() {
 
   return (
     <main className="relative min-h-screen w-full bg-galaxy-gradient overflow-hidden">
-      <GraphCanvas />
+      {hasNodes && (
+        <Suspense fallback={null}>
+          <GraphCanvas />
+        </Suspense>
+      )}
 
       <motion.div
         className="absolute w-full max-w-lg px-4 z-10"
@@ -54,6 +60,7 @@ function App() {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              onFocus={loadGraphCanvas}
               placeholder="Tecelã, desvende para mim..."
               className="w-full bg-white/5 border border-white/10 rounded-lg py-3 px-4 pl-12 focus:outline-none focus:border-electric-cyan transition-all"
               disabled={isLoading}

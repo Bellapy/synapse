@@ -1,16 +1,19 @@
 import React from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import useGraphStore from '../store/graphStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, LoaderCircle, GitBranch, Share2, AlertTriangle } from 'lucide-react';
 
 const SidePanel = () => {
-  const { 
-    selectedNode, 
-    selectedNodeDetails,
-    isPanelLoading,
-    expandNode,
-    clearSelectedNode 
-  } = useGraphStore();
+  const { selectedNode, selectedNodeDetails, isPanelLoading, expandNode, clearSelectedNode } = useGraphStore(
+    useShallow(state => ({
+      selectedNode: state.selectedNode,
+      selectedNodeDetails: state.selectedNodeDetails,
+      isPanelLoading: state.isPanelLoading,
+      expandNode: state.expandNode,
+      clearSelectedNode: state.clearSelectedNode,
+    }))
+  );
 
   const handleExpand = () => {
     if (selectedNode) {
