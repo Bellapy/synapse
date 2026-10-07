@@ -44,13 +44,15 @@ export function useExpandNode() {
     onError: (error: Error) => useGraphStore.getState().setError(error.message),
   });
 
+  const { mutate } = mutation;
+
   // Ignora novos pedidos enquanto outro está em andamento (cada chamada gasta cota da IA).
   const expand = useCallback(
     (label: string, type: ExpansionType = 'general') => {
       if (queryClient.isMutating({ mutationKey: GRAPH_MUTATION_KEY }) > 0) return;
-      mutation.mutate({ label, type });
+      mutate({ label, type });
     },
-    [mutation.mutate, queryClient]
+    [mutate, queryClient]
   );
 
   return { expand, isPending: mutation.isPending };

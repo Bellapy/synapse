@@ -3,8 +3,7 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y gcc libpq-dev && rm -rf /var/lib/apt/lists/*
-
+# Todas as dependências têm wheels pré-compiladas: não precisa de gcc nem libpq.
 COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt

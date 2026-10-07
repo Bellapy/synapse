@@ -136,6 +136,8 @@ const GraphCanvas = () => {
     return () => {
       bloomRef.current?.dispose();
       bloomRef.current = null;
+      // O ForceGraph só existe depois do primeiro render com nós medidos, então a ref é lida aqui, no desmonte.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       graphRef.current?._destructor?.();
     };
   }, []);

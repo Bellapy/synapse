@@ -2,7 +2,7 @@ import React from 'react';
 import useGraphStore from '../store/graphStore';
 import { useExpandNode, useGraphBusy, useNodeConnections, useNodeDetails } from '../hooks/useGraphQueries';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, LoaderCircle, GitBranch, Share2, AlertTriangle } from 'lucide-react';
+import { X, LoaderCircle, GitBranch, AlertTriangle } from 'lucide-react';
 
 const SidePanel = () => {
   const selectedNode = useGraphStore(state => state.selectedNode);
