@@ -6,6 +6,7 @@ import { Vector2 } from 'three';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { useShallow } from 'zustand/react/shallow';
 import useGraphStore from '../store/graphStore';
+import { useExpandNode } from '../hooks/useGraphQueries';
 import { SynapseNode } from '../types';
 
 const ForceGraph3DComponent = ForceGraph3D as any;
@@ -75,15 +76,15 @@ const getNodeObject = (node: SynapseNode) =>
 const getLinkColor = (link: any) => LINK_COLORS[(link.origin as Origin) ?? 'initial'] ?? LINK_COLORS.initial;
 
 const GraphCanvas = () => {
-  const { nodes, edges, setSelectedNode, clearSelectedNode, expandNode } = useGraphStore(
+  const { nodes, edges, setSelectedNode, clearSelectedNode } = useGraphStore(
     useShallow(state => ({
       nodes: state.nodes,
       edges: state.edges,
       setSelectedNode: state.setSelectedNode,
       clearSelectedNode: state.clearSelectedNode,
-      expandNode: state.expandNode,
     }))
   );
+  const { expand } = useExpandNode();
   const graphRef = useRef<any>(null);
   const bloomRef = useRef<UnrealBloomPass | null>(null);
   const [ref, bounds] = useMeasure();
@@ -148,8 +149,8 @@ const GraphCanvas = () => {
 
   const handleNodeDoubleClick = useCallback((node: any) => {
     clearSelectedNode();
-    expandNode(node.label);
-  }, [clearSelectedNode, expandNode]);
+    expand(node.label);
+  }, [clearSelectedNode, expand]);
 
   if (nodes.length === 0) return null;
 

@@ -1,148 +1,45 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { generateGraph, fetchNodeDetails } from '../services/api';
-import { SynapseNode, SynapseEdge, NodeDetails } from '../types';
+import { mergeExpansion } from '../lib/mergeGraph';
+import { GraphData, SynapseEdge, SynapseNode } from '../types';
 
+/**
+ * Estado do cliente: o grafo exibido, a seleção e a mensagem de erro.
+ * Estado do servidor (requisições, cache, loading) fica no React Query — ver hooks/useGraphQueries.ts.
+ */
 interface GraphState {
   nodes: SynapseNode[];
   edges: SynapseEdge[];
-  isLoading: boolean;
-  isPanelLoading: boolean;
-  error: string | null;
-  selectedNode: SynapseNode | null;
-  selectedNodeDetails: NodeDetails | null;
   originalQuery: string;
-  cachedNodeDetails: Record<string, NodeDetails>;
+  selectedNode: SynapseNode | null;
+  error: string | null;
 
-  fetchGraphData: (query: string) => Promise<void>;
-  expandNode: (nodeLabel: string, expansionType?: string) => Promise<void>;
-  setSelectedNode: (node: SynapseNode | null) => Promise<void>;
+  setGraph: (query: string, data: GraphData) => void;
+  applyExpansion: (data: GraphData) => void;
+  setSelectedNode: (node: SynapseNode | null) => void;
   clearSelectedNode: () => void;
+  setError: (message: string | null) => void;
   clearGraph: () => void;
 }
 
-const useGraphStore = create<GraphState>()(devtools((set, get) => ({
+const useGraphStore = create<GraphState>()(devtools(set => ({
   nodes: [],
   edges: [],
-  isLoading: false,
-  isPanelLoading: false,
-  error: null,
+  originalQuery: '',
   selectedNode: null,
-  selectedNodeDetails: null,
-  originalQuery: "",
-  cachedNodeDetails: {},
+  error: null,
 
-  fetchGraphData: async (query: string) => {
-    set({ isLoading: true, error: null, originalQuery: query }, false, 'FETCH_GRAPH_DATA_START' as any);
-    try {
-      const graphData = await generateGraph(query);
-      set({ nodes: graphData.nodes, edges: graphData.edges, isLoading: false }, false, 'FETCH_GRAPH_DATA_SUCCESS' as any);
-    } catch (error: any) {
-      set({ error: error.message, isLoading: false, nodes: [], edges: [] }, false, 'FETCH_GRAPH_DATA_ERROR' as any);
-    }
-  },
+  setGraph: (query, data) =>
+    set({ nodes: data.nodes, edges: data.edges, originalQuery: query, selectedNode: null, error: null }, false, 'SET_GRAPH' as any),
 
-  expandNode: async (nodeLabel: string, expansionType = 'general') => {
-    if (get().isLoading) return;
-    set({ isLoading: true, error: null }, false, `EXPAND_NODE_${expansionType.toUpperCase()}_START` as any);
-    
-    try {
-      const { nodes: currentNodes } = get();
-      const existingNodeLabels = currentNodes.map(n => n.label);
-      const newGraphData = await generateGraph(nodeLabel, existingNodeLabels, expansionType);
-      
-      set(state => {
-        const nodeLabelMap = new Map(state.nodes.map(node => [node.label, node]));
-        const idRemapping = new Map<string, string>();
-        const newNodesToAdd: SynapseNode[] = [];
+  applyExpansion: data =>
+    set(state => mergeExpansion({ nodes: state.nodes, edges: state.edges }, data), false, 'APPLY_EXPANSION' as any),
 
-        newGraphData.nodes.forEach(newNode => {
-          if (nodeLabelMap.has(newNode.label)) {
-            const existingNode = nodeLabelMap.get(newNode.label)!;
-            idRemapping.set(newNode.id, existingNode.id);
-          } else {
-            newNodesToAdd.push(newNode);
-            nodeLabelMap.set(newNode.label, newNode);
-            idRemapping.set(newNode.id, newNode.id);
-          }
-        });
-
-        const remappedEdges = newGraphData.edges
-          .map(edge => ({
-            ...edge,
-            source: idRemapping.get(edge.source as string) || edge.source,
-            target: idRemapping.get(edge.target as string) || edge.target,
-          }))
-          .filter(edge => edge.source && edge.target);
-
-        const edgeSet = new Set(state.edges.map(e => `${e.source}-${e.target}`));
-        const newUniqueEdges = remappedEdges.filter(edge => {
-            const edgeKey = `${edge.source}-${edge.target}`;
-            if (edgeSet.has(edgeKey)) return false;
-            edgeSet.add(edgeKey);
-            return true;
-        });
-
-        return {
-          nodes: [...state.nodes, ...newNodesToAdd],
-          edges: [...state.edges, ...newUniqueEdges],
-          isLoading: false,
-        };
-      }, false, `EXPAND_NODE_${expansionType.toUpperCase()}_SUCCESS` as any);
-
-    } catch (error: any) {
-      set({ error: error.message, isLoading: false }, false, `EXPAND_NODE_${expansionType.toUpperCase()}_ERROR` as any);
-    }
-  },
-
-  setSelectedNode: async (node: SynapseNode | null) => {
-    if (!node) {
-      set({ selectedNode: null, selectedNodeDetails: null }, false, 'CLEAR_SELECTED_NODE' as any);
-      return;
-    }
-
-    const { cachedNodeDetails, originalQuery, edges, nodes } = get();
-
-    if (cachedNodeDetails && cachedNodeDetails[node.label]) {
-      set({ 
-        selectedNode: node, 
-        selectedNodeDetails: cachedNodeDetails[node.label], 
-        isPanelLoading: false 
-      }, false, 'FETCH_NODE_DETAILS_CACHE_HIT' as any);
-      return;
-    }
-
-    set({ selectedNode: node, isPanelLoading: true, selectedNodeDetails: null, error: null }, false, 'SET_SELECTED_NODE' as any);
-    try {
-      const details = await fetchNodeDetails(node.label, originalQuery);
-      
-      const connections = edges
-        .filter(edge => edge.source === node.id || edge.target === node.id)
-        .map(edge => {
-          const connectedNodeId = edge.source === node.id ? edge.target : edge.source;
-          const connectedNode = nodes.find(n => n.id === connectedNodeId);
-          return connectedNode ? connectedNode.label : null;
-        })
-        .filter(Boolean) as string[];
-        
-      details.connections = connections;
-   
-      set(state => ({
-        selectedNodeDetails: details,
-        isPanelLoading: false,
-        cachedNodeDetails: {
-          ...state.cachedNodeDetails,
-          [node.label]: details
-        }
-      }), false, 'FETCH_NODE_DETAILS_SUCCESS' as any);
-    } catch (error: any) {
-      set({ error: error.message, isPanelLoading: false }, false, 'FETCH_NODE_DETAILS_ERROR' as any);
-    }
-  },
-
-  clearSelectedNode: () => set({ selectedNode: null, selectedNodeDetails: null }, false, 'CLEAR_SELECTED_NODE' as any),
-  clearGraph: () => set({ nodes: [], edges: [], originalQuery: "", cachedNodeDetails: {} }, false, 'CLEAR_GRAPH' as any),
-
-}), { name: "SynapseGraphStore" }));
+  setSelectedNode: node => set({ selectedNode: node }, false, 'SET_SELECTED_NODE' as any),
+  clearSelectedNode: () => set({ selectedNode: null }, false, 'CLEAR_SELECTED_NODE' as any),
+  setError: message => set({ error: message }, false, 'SET_ERROR' as any),
+  clearGraph: () =>
+    set({ nodes: [], edges: [], originalQuery: '', selectedNode: null }, false, 'CLEAR_GRAPH' as any),
+}), { name: 'SynapseGraphStore' }));
 
 export default useGraphStore;
