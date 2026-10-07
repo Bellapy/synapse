@@ -2,6 +2,7 @@ import React, { lazy, Suspense, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Search, LoaderCircle, Sparkles } from 'lucide-react';
 import useGraphStore from './store/graphStore';
+import { useGraphBusy, useSearchGraph } from './hooks/useGraphQueries';
 // O canvas 3D (three.js) é pesado: só é baixado quando necessário.
 const loadGraphCanvas = () => import('./components/graphCanvas');
 const GraphCanvas = lazy(loadGraphCanvas);
@@ -9,15 +10,15 @@ import SidePanel from './components/SidePanel';
 
 function App() {
   const [query, setQuery] = useState('');
-  const fetchGraphData = useGraphStore(state => state.fetchGraphData);
-  const isLoading = useGraphStore(state => state.isLoading);
+  const search = useSearchGraph();
+  const isLoading = useGraphBusy();
   const error = useGraphStore(state => state.error);
   const hasNodes = useGraphStore(state => state.nodes.length > 0);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim() && !isLoading) {
-      fetchGraphData(query);
+      search.mutate(query.trim());
     }
   };
 
