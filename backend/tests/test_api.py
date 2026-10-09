@@ -34,16 +34,56 @@ def test_generate_graph_returns_ai_result(client, mock_ai):
 
     assert response.status_code == 200
     assert response.json()["nodes"][0]["label"] == "Entropia"
-    graph.assert_awaited_once_with("Entropia", None, "general")
+    graph.assert_awaited_once_with("Entropia", [], "general", None)
 
 
 def test_generate_graph_passes_expansion_context(client, mock_ai):
     graph, _ = mock_ai
     client.post(
         "/api/generate-graph",
-        json={"query": "Entropia", "existing_node_labels": ["A"], "expansion_type": "counter"},
+        json={
+            "query": "Entropia",
+            "existing_nodes": [{"id": "a", "label": "A"}],
+            "original_query": "termodinâmica",
+            "expansion_type": "counter",
+        },
     )
-    graph.assert_awaited_once_with("Entropia", ["A"], "counter")
+    query, known, expansion_type, original_query = graph.await_args.args
+    assert (query, expansion_type, original_query) == ("Entropia", "counter", "termodinâmica")
+    assert [(n.id, n.label) for n in known] == [("a", "A")]
+
+
+def test_legacy_label_only_payload_still_works(client, mock_ai):
+    graph, _ = mock_ai
+    response = client.post("/api/generate-graph", json={"query": "Entropia", "existing_node_labels": ["Calor"]})
+
+    assert response.status_code == 200
+    known = graph.await_args.args[1]
+    assert [(n.id, n.label) for n in known] == [("calor", "Calor")]
+
+
+def test_identical_requests_are_answered_from_cache(client, mock_ai):
+    graph, _ = mock_ai
+    first = client.post("/api/generate-graph", json={"query": "Entropia"})
+    second = client.post("/api/generate-graph", json={"query": "  entropia "})
+
+    assert first.status_code == second.status_code == 200
+    assert first.json() == second.json()
+    graph.assert_awaited_once()
+
+
+def test_all_models_unavailable_returns_503_without_leaking_details(client, monkeypatch):
+    from services.ai_router import AIUnavailableError
+
+    monkeypatch.setattr(
+        "routers.graph.generate_graph_from_query",
+        AsyncMock(side_effect=AIUnavailableError("gemini-x: 503 secret detail")),
+    )
+    response = client.post("/api/generate-graph", json={"query": "x"})
+
+    assert response.status_code == 503
+    assert "secret detail" not in response.text
+    assert "sobrecarregada" in response.json()["detail"]
 
 
 @pytest.mark.parametrize(

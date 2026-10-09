@@ -14,13 +14,22 @@ import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
 from core import rate_limit  # noqa: E402
+from decorators import cache as cache_module  # noqa: E402
+from services import ai_router  # noqa: E402
 
 
 @pytest.fixture(autouse=True)
-def _reset_rate_limit():
+def _reset_shared_state():
+    """Rate limit, cache em memória e saúde dos modelos são globais do processo: limpa entre testes."""
     rate_limit._memory_hits.clear()
+    cache_module.memory_cache.clear()
+    cache_module._inflight.clear()
+    ai_router.reset_state()
     yield
     rate_limit._memory_hits.clear()
+    cache_module.memory_cache.clear()
+    cache_module._inflight.clear()
+    ai_router.reset_state()
 
 
 @pytest.fixture
