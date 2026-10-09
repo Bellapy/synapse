@@ -2,19 +2,335 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --ink: #0b0620;
+  --cream: #fbeedc;
+  --mist: #b9aedd;
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 @layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
   body {
-    @apply bg-deep-space text-white overflow-hidden;
-    font-family: 'Inter', sans-serif; /* Fonte moderna sans-serif */
+    @apply bg-ink text-cream overflow-hidden antialiased;
+    font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+    font-optical-sizing: auto;
+  }
+
+  ::selection {
+    background: rgb(255 111 159 / 0.45);
+    color: #fff;
+  }
+
+  /* Rolagem fina, sem a barra cinza padrão. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(255 255 255 / 0.22) transparent;
   }
 }
 
-/* Utilitário para o efeito de Vidro (Glassmorphism) */
-.glass-panel {
-  @apply bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl shadow-2xl;
+@layer components {
+  /* Grão de filme sobre tudo: costura o fundo, o vidro e o 3D numa mesma superfície. */
+  .film-grain {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    pointer-events: none;
+    opacity: 0.1;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1.1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+
+  /*
+   * Vidro líquido: desfoca e satura o que está atrás (o fundo fluido muda de textura ali dentro),
+   * com borda em degradê e uma retícula de pontos, como no cartão de referência.
+   */
+  .liquid-glass {
+    position: relative;
+    isolation: isolate;
+    border-radius: 28px;
+    background:
+      radial-gradient(120% 90% at 0% 0%, rgb(255 255 255 / 0.2), transparent 55%),
+      linear-gradient(150deg, rgb(255 255 255 / 0.1), rgb(196 107 240 / 0.07) 60%, rgb(255 157 110 / 0.09));
+    -webkit-backdrop-filter: blur(28px) saturate(1.8) brightness(1.1);
+    backdrop-filter: blur(28px) saturate(1.8) brightness(1.1);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.35),
+      inset 0 -18px 40px -24px rgb(255 157 110 / 0.28),
+      0 40px 90px -30px rgb(6 2 24 / 0.85);
+  }
+
+  .liquid-glass::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    pointer-events: none;
+    background: linear-gradient(
+      140deg,
+      rgb(255 255 255 / 0.6),
+      rgb(255 255 255 / 0.06) 32%,
+      rgb(255 157 110 / 0.32) 68%,
+      rgb(255 255 255 / 0.45)
+    );
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+  }
+
+  .liquid-glass::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0.4;
+    mix-blend-mode: overlay;
+    background-image: radial-gradient(rgb(255 255 255 / 0.7) 0.9px, transparent 1.3px);
+    background-size: 6px 6px;
+    -webkit-mask-image: linear-gradient(155deg, #000, transparent 55%);
+    mask-image: linear-gradient(155deg, #000, transparent 55%);
+  }
+
+  .eyebrow {
+    font-family: 'Geist Mono', ui-monospace, monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--mist);
+  }
+
+  /* Palavras de destaque em serifa itálica, o contraponto da sans geométrica. */
+  .accent-serif {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-style: italic;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+
+  .text-aurora {
+    background: linear-gradient(100deg, #ffd29a 0%, #ff8fb0 38%, #c46bf0 72%, #7fb6ff 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Botão em degradê fluido: o gradiente "respira" em vez de ser uma cor chapada. */
+  .btn-aurora {
+    position: relative;
+    overflow: hidden;
+    color: #1a0a2e;
+    background: linear-gradient(110deg, #ffd29a, #ff8fb0 45%, #c46bf0 80%, #ffd29a);
+    background-size: 220% 100%;
+    animation: aurora-shift 9s linear infinite;
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.6),
+      0 10px 30px -10px rgb(255 111 159 / 0.65);
+    transition:
+      transform 0.35s var(--ease-out-soft),
+      box-shadow 0.35s var(--ease-out-soft),
+      filter 0.35s;
+  }
+
+  .btn-aurora:hover:not(:disabled) {
+    transform: translateY(-1px) scale(1.02);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.7),
+      0 16px 40px -10px rgb(255 111 159 / 0.85);
+  }
+
+  .btn-aurora:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
+  .btn-aurora:disabled {
+    filter: saturate(0.6) brightness(0.85);
+    cursor: not-allowed;
+  }
+
+  .btn-ghost {
+    background: rgb(255 255 255 / 0.07);
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.18);
+    transition:
+      background 0.3s,
+      box-shadow 0.3s,
+      transform 0.35s var(--ease-out-soft);
+  }
+
+  .btn-ghost:hover:not(:disabled) {
+    background: rgb(255 255 255 / 0.14);
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.32);
+    transform: translateY(-1px);
+  }
+
+  .btn-ghost:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 }
 
-/* Efeito de brilho nos nós (Glow) */
-.glow-cyan {
-  box-shadow: 0 0 15px #22d3ee;
+@keyframes aurora-shift {
+  to {
+    background-position: 220% 0;
+  }
+}
+
+/* ---------- Mascote ---------- */
+.mascot-live .mascot-ear {
+  transform-box: fill-box;
+}
+.mascot-live .mascot-ear-back {
+  transform-origin: 92% 85%;
+  animation: ear-twitch-a 6s ease-in-out infinite;
+}
+.mascot-live .mascot-ear-front {
+  transform-origin: 8% 85%;
+  animation: ear-twitch-b 7.5s ease-in-out 1.6s infinite;
+}
+.mascot-live .mascot-eye {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: blink 5s ease-in-out infinite;
+}
+.mascot-live .mascot-body {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: breathe 4.2s ease-in-out infinite;
+}
+.mascot-live .mascot-tail {
+  transform-box: fill-box;
+  transform-origin: 100% 100%;
+  animation: tail-flick 3.6s ease-in-out infinite;
+}
+.mascot-sparkle {
+  animation: twinkle 3.4s ease-in-out infinite;
+}
+
+@keyframes ear-twitch-a {
+  0%,
+  84%,
+  100% {
+    transform: rotate(0);
+  }
+  88% {
+    transform: rotate(-10deg);
+  }
+  92% {
+    transform: rotate(3deg);
+  }
+}
+@keyframes ear-twitch-b {
+  0%,
+  80%,
+  100% {
+    transform: rotate(0);
+  }
+  85% {
+    transform: rotate(9deg);
+  }
+  90% {
+    transform: rotate(-2deg);
+  }
+}
+@keyframes blink {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+  95.5% {
+    transform: scaleY(0.08);
+  }
+}
+@keyframes breathe {
+  0%,
+  100% {
+    transform: scale(1, 1);
+  }
+  50% {
+    transform: scale(1.004, 1.018);
+  }
+}
+@keyframes tail-flick {
+  0%,
+  70%,
+  100% {
+    transform: rotate(0);
+  }
+  78% {
+    transform: rotate(-14deg);
+  }
+  86% {
+    transform: rotate(5deg);
+  }
+}
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Rótulos dos nós 3D (CSS2DRenderer) */
+.node-label {
+  pointer-events: none;
+  white-space: nowrap;
+  font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+  font-weight: 500;
+  font-size: 13px;
+  letter-spacing: -0.01em;
+  color: var(--cream);
+  text-shadow:
+    0 1px 12px rgb(11 6 32 / 0.9),
+    0 0 3px rgb(11 6 32 / 0.8);
+}
+/* O CSS2DRenderer controla o transform do elemento; o deslocamento vai no filho. */
+.node-label > span {
+  display: block;
+  transform: translateY(34px);
+}
+.node-label[data-origin='initial'] {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 19px;
+}
+.node-label[data-origin='counter'] {
+  color: #ffd1d8;
+}
+
+/* Dica da ligação (relação entre dois conceitos) */
+.scene-tooltip {
+  background: transparent !important;
+  color: var(--cream) !important;
+}
+.link-tip {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-family: 'Geist Mono', ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  background: rgb(255 255 255 / 0.14);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.25);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mascot-live *,
+  .mascot-sparkle,
+  .btn-aurora {
+    animation: none !important;
+  }
 }
