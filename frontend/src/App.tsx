@@ -1,91 +1,176 @@
-import React, { lazy, Suspense, useState } from 'react';
-import { motion } from 'framer-motion';
-import { Search, LoaderCircle, Sparkles } from 'lucide-react';
+import { lazy, Suspense, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { LoaderCircle } from 'lucide-react';
 import useGraphStore from './store/graphStore';
 import { useGraphBusy, useSearchGraph } from './hooks/useGraphQueries';
 import { useSlowHint } from './hooks/useSlowHint';
+import { useMediaQuery } from './hooks/useMediaQuery';
+import SearchBar from './components/SearchBar';
+import PulseLoader from './components/PulseLoader';
+import SidePanel from './components/SidePanel';
 // O canvas 3D (three.js) é pesado: só é baixado quando necessário.
 const loadGraphCanvas = () => import('./components/graphCanvas');
 const GraphCanvas = lazy(loadGraphCanvas);
-import SidePanel from './components/SidePanel';
+
+const SUGGESTIONS = ['Por que sonhamos?', 'Buracos negros', 'Revolução Industrial', 'Consciência'];
 
 function App() {
   const [query, setQuery] = useState('');
   const search = useSearchGraph();
   const isLoading = useGraphBusy();
   const isSlow = useSlowHint(isLoading);
+  const narrow = useMediaQuery('(max-width: 639px)');
   const error = useGraphStore(state => state.error);
   const hasNodes = useGraphStore(state => state.nodes.length > 0);
+  const clearGraph = useGraphStore(state => state.clearGraph);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (query.trim() && !isLoading) {
-      search.mutate(query.trim());
-    }
+  const submit = (text: string) => {
+    const trimmed = text.trim();
+    if (trimmed && !isLoading) search.mutate(trimmed);
   };
 
+  const firstLoad = isLoading && !hasNodes;
+  const showHero = !hasNodes && !firstLoad;
+
   return (
-    <main className="relative min-h-screen w-full bg-galaxy-gradient overflow-hidden">
+    <main className="relative h-full w-full overflow-hidden bg-ink">
+      <div className="grain-bg absolute inset-0" aria-hidden="true" />
+      {/* Com o grafo na tela, o fundo escurece para os nós ganharem destaque. */}
+      <motion.div
+        className="absolute inset-0 bg-ink"
+        aria-hidden="true"
+        initial={false}
+        animate={{ opacity: hasNodes ? 0.55 : 0 }}
+        transition={{ duration: 1 }}
+      />
+
       {hasNodes && (
         <Suspense fallback={null}>
           <GraphCanvas />
         </Suspense>
       )}
 
+      <div className="film-grain" aria-hidden="true" />
+
+      {/* Marca: clicar volta ao início. */}
+      <header className="absolute left-5 top-5 z-30 sm:left-8 sm:top-7">
+        <button
+          onClick={() => {
+            clearGraph();
+            setQuery('');
+          }}
+          aria-label="Voltar ao início"
+        >
+          <span className="text-[1.65rem] font-semibold leading-none tracking-tightest text-white">
+            syn<span className="accent-serif text-[1.15em] font-normal">apse</span>
+          </span>
+        </button>
+      </header>
+
+      {/* Coluna central: título, espera e busca compartilham a mesma posição. */}
       <motion.div
-        className="absolute w-full max-w-lg px-4 z-10"
-        initial={{ top: '50%', left: '50%', x: '-50%', y: '-50%' }}
-        animate={{ top: hasNodes ? '2rem' : '50%' }}
-        transition={{ type: 'spring', stiffness: 120, damping: 20, delay: 0.2 }}
+        className="absolute left-1/2 z-20 w-full max-w-2xl px-5"
+        initial={false}
+        animate={{ top: hasNodes ? (narrow ? '4.6rem' : '1.35rem') : '50%', y: hasNodes ? '0%' : '-50%' }}
+        transition={{ type: 'spring', stiffness: 90, damping: 20 }}
+        style={{ x: '-50%', maxWidth: hasNodes ? '34rem' : undefined }}
       >
-        <div className="w-full text-center mb-8">
-            <motion.h1 
-                className="text-6xl font-bold text-white tracking-tighter"
-                initial={{ opacity: 1 }}
-                animate={{ opacity: hasNodes ? 0 : 1, y: hasNodes ? -20 : 0 }}
-                transition={{ duration: 0.5 }}
+        <AnimatePresence mode="wait">
+          {showHero && (
+            <motion.div
+              key="hero"
+              className="mb-9 text-center"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -14 }}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             >
-                Synapse
-            </motion.h1>
-            <motion.p 
-                className="text-xl text-gray-400 mt-2 font-mono"
-                initial={{ opacity: 1 }}
-                animate={{ opacity: hasNodes ? 0 : 1, y: hasNodes ? -10 : 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-            >
-                The Thought Weaver
-            </motion.p>
-        </div>
-        
-        <form onSubmit={handleSearch} className="glass-panel p-4">
-          <div className="relative">
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onFocus={loadGraphCanvas}
-              placeholder="Tecelã, desvende para mim..."
-              className="w-full bg-white/5 border border-white/10 rounded-lg py-3 px-4 pl-12 focus:outline-none focus:border-electric-cyan transition-all"
-              disabled={isLoading}
-            />
-            <Search className="absolute left-4 top-3.5 text-gray-500 w-5 h-5" />
-            <button
-              type="submit"
-              className="absolute right-2 top-[7px] h-9 px-4 rounded-md bg-magenta-glow/80 hover:bg-magenta-glow text-white font-bold transition-all shadow-lg shadow-magenta-glow/20 flex items-center justify-center gap-2 disabled:bg-gray-500"
-              disabled={isLoading}
-            >
-              {isLoading ? <LoaderCircle className="animate-spin w-5 h-5" /> : <Sparkles className="w-5 h-5" />}
-              <span>Tecelar</span>
-            </button>
-          </div>
-          {isSlow && !error && (
-            <p className="text-gray-400 text-center text-sm mt-2 font-mono">
-              Acordando o servidor gratuito... a primeira busca pode levar até 1 minuto.
-            </p>
+              <p className="eyebrow mb-5">mapa vivo de conexões</p>
+              <h1 className="text-[clamp(2.6rem,7.4vw,5.2rem)] font-light leading-[0.98] tracking-tightest text-white">
+                O que você quer
+                <br />
+                <span className="accent-serif text-[1.18em]">desvendar?</span>
+              </h1>
+              <p className="mx-auto mt-6 max-w-md text-base font-light leading-relaxed text-white/70 sm:text-lg">
+                Digite uma ideia e eu puxo os fios que a ligam ao resto do mundo.
+              </p>
+            </motion.div>
           )}
-          {error && <p className="text-red-400 text-center mt-2">{error}</p>}
-        </form>
+          {firstLoad && (
+            <motion.div
+              key="loader"
+              className="mb-9"
+              initial={{ opacity: 0, scale: 0.94 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.04 }}
+              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <PulseLoader slow={isSlow} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <SearchBar
+          value={query}
+          onChange={setQuery}
+          onSubmit={() => submit(query)}
+          onFocus={loadGraphCanvas}
+          loading={isLoading}
+          compact={hasNodes}
+        />
+
+        {showHero && (
+          <motion.ul
+            className="mt-6 flex flex-wrap justify-center gap-2.5"
+            initial="hidden"
+            animate="show"
+            variants={{ show: { transition: { staggerChildren: 0.08, delayChildren: 0.4 } } }}
+          >
+            {SUGGESTIONS.map(suggestion => (
+              <motion.li key={suggestion} variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }}>
+                <button
+                  onClick={() => {
+                    setQuery(suggestion);
+                    submit(suggestion);
+                  }}
+                  className="btn-ghost rounded-full px-4 py-2 text-sm font-light tracking-tight text-white"
+                >
+                  {suggestion}
+                </button>
+              </motion.li>
+            ))}
+          </motion.ul>
+        )}
+
+        {error && (
+          <motion.p
+            key={error}
+            className="accent-serif mt-4 text-center text-xl text-white"
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            role="alert"
+          >
+            {error}
+          </motion.p>
+        )}
       </motion.div>
+
+      {/* Espera durante expansões: o grafo continua visível e um aviso discreto mostra que algo está vindo. */}
+      <AnimatePresence>
+        {isLoading && hasNodes && (
+          <motion.div
+            className="liquid-glass absolute bottom-6 left-1/2 z-30 flex items-center gap-3 !rounded-full px-6 py-3"
+            style={{ x: '-50%' }}
+            initial={{ opacity: 0, y: 24, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 24, scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 220, damping: 22 }}
+          >
+            <LoaderCircle className="h-4 w-4 animate-spin text-white" />
+            <span className="accent-serif text-xl text-white">{isSlow ? 'Acordando o servidor…' : 'Puxando novos fios…'}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <SidePanel />
     </main>

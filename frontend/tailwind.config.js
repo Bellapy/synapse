@@ -1,25 +1,32 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
+  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
       colors: {
-        'deep-space': '#030712',
-        
-        'electric-cyan': '#22d3ee',
-        'magenta-glow': '#d946ef',
-       
-        'counter-red': '#f43f5e', 
-        'expand-green': '#34d399', 
-       
+        // Noite violeta: o fundo nunca é preto puro nem cinza genérico.
+        ink: '#0b0620',
+        night: '#150d38',
+        iris: '#7a5cff',
+        orchid: '#c46bf0',
+        rose: '#ff6f9f',
+        ember: '#ff9d6e',
+        honey: '#ffd29a',
+        sky: '#4fb3ff',
+        // Cores quentes do mascote.
+        fawn: '#d99e68',
+        cream: '#fbeedc',
+        mist: '#b9aedd',
       },
-      backgroundImage: {
-        'galaxy-gradient': 'radial-gradient(ellipse at 70% 30%, #1e1b4b 0%, #030712 60%)',
-      }
+      fontFamily: {
+        display: ['"Instrument Serif"', 'Georgia', 'serif'],
+        sans: ['"Bricolage Grotesque"', 'system-ui', 'sans-serif'],
+        mono: ['"Geist Mono"', 'ui-monospace', 'monospace'],
+      },
+      letterSpacing: {
+        tightest: '-0.045em',
+      },
     },
   },
   plugins: [],
-}
+};

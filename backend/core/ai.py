@@ -16,6 +16,11 @@ LANGUAGE_RULE = (
 )
 
 
+# Parâmetros de cada tarefa (temperatura, limite de tokens de saída): um cliente é criado por combinação.
+GRAPH_LLM = (0.6, 1000)
+DETAIL_LLM = (0.3, 400)
+
+
 def thinking_kwargs(model: str) -> dict:
     """Desliga ou reduz o 'raciocínio' do modelo.
 
@@ -47,3 +52,18 @@ def get_model(model: str, temperature: float, max_output_tokens: int) -> ChatGoo
         max_retries=1,
         **thinking_kwargs(model),
     )
+
+
+def prewarm_models() -> None:
+    """Cria os clientes de todos os modelos configurados antes da primeira requisição.
+
+    Criar o cliente é lento (SSL, validação de credenciais); fazer isso na subida tira esse custo da primeira busca.
+    Deve rodar fora do event loop (ex.: asyncio.to_thread).
+    """
+    names = []
+    for name in [config.AI_MODEL_NAME, *config.AI_FALLBACK_MODELS]:
+        if name and name not in names:
+            names.append(name)
+    for name in names:
+        for params in (GRAPH_LLM, DETAIL_LLM):
+            get_model(name, *params)

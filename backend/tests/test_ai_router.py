@@ -159,3 +159,27 @@ def test_cooldown_grows_with_consecutive_failures_up_to_a_cap():
     exc = RuntimeError("503 UNAVAILABLE")
     values = [classify_failure(exc, n) for n in (1, 2, 3, 10)]
     assert values == [30, 60, 120, 600]
+
+
+async def test_slow_client_construction_does_not_block_the_event_loop():
+    """Regressão: criar o cliente do Gemini é lento (SSL) e já travou o servidor inteiro, inclusive o hedge."""
+    import time
+
+    def slow_build(_model):
+        time.sleep(0.5)  # síncrono, como o construtor real
+        return FakeChain(result="ok")
+
+    ticks = []
+
+    async def ticker():
+        while True:
+            ticks.append(time.monotonic())
+            await asyncio.sleep(0.05)
+
+    task = asyncio.create_task(ticker())
+    result, _ = await run_with_fallback(slow_build, {})
+    task.cancel()
+
+    assert result == "ok"
+    gaps = [b - a for a, b in zip(ticks, ticks[1:])]
+    assert max(gaps) < 0.3, f"o event loop ficou parado por {max(gaps):.2f}s"
