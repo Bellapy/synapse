@@ -1,14 +1,7 @@
 import useGraphStore from '../store/graphStore';
 import { useExpandNode, useGraphBusy, useNodeConnections, useNodeDetails } from '../hooks/useGraphQueries';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X, GitBranch, Swords, RotateCcw } from 'lucide-react';
-import { MascotMark } from './Mascot';
-
-const ORIGIN_DOT: Record<string, string> = {
-  initial: 'from-iris to-rose',
-  general: 'from-ember to-honey',
-  counter: 'from-rose to-orchid',
-};
+import { X, GitBranch, Swords, RotateCcw, LoaderCircle } from 'lucide-react';
 
 const SidePanel = () => {
   const selectedNode = useGraphStore(state => state.selectedNode);
@@ -39,7 +32,7 @@ const SidePanel = () => {
           <div className="liquid-glass flex h-full flex-col p-7 sm:p-8">
             <button
               onClick={clearSelectedNode}
-              className="btn-ghost absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full text-cream"
+              className="btn-ghost absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full text-white"
               aria-label="Fechar painel"
             >
               <X size={16} />
@@ -47,14 +40,14 @@ const SidePanel = () => {
 
             {isPending && (
               <div className="flex flex-1 flex-col items-center justify-center gap-4 py-10 text-center">
-                <MascotMark size={84} animated />
-                <p className="accent-serif text-2xl text-cream">Lendo “{selectedNode.label}”…</p>
+                <LoaderCircle className="h-9 w-9 animate-spin text-white" />
+                <p className="accent-serif text-2xl text-white">Lendo “{selectedNode.label}”…</p>
               </div>
             )}
 
             {isError && (
               <div className="flex flex-1 flex-col items-center justify-center gap-5 py-10 text-center">
-                <p className="accent-serif text-2xl leading-snug text-cream">Não consegui ler este conceito agora.</p>
+                <p className="accent-serif text-2xl leading-snug text-white">Não consegui ler este conceito agora.</p>
                 <button onClick={() => refetch()} className="btn-ghost flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium">
                   <RotateCcw size={15} />
                   Tentar de novo
@@ -65,24 +58,24 @@ const SidePanel = () => {
             {details && (
               <>
                 <div className="mb-5 pr-10">
-                  <span className="eyebrow flex items-center gap-2 !text-cream/75">
-                    <span className={`h-2 w-2 rounded-full bg-gradient-to-br ${ORIGIN_DOT[selectedNode.origin ?? 'initial']}`} />
+                  <span className="eyebrow flex items-center gap-2 !text-white/70">
+                    <span className="h-1.5 w-1.5 rounded-full bg-white" />
                     {details.type_tag}
                   </span>
-                  <h2 className="mt-3 text-[2.5rem] font-light leading-[1.02] tracking-tightest text-cream">
+                  <h2 className="mt-3 text-[2.5rem] font-light leading-[1.02] tracking-tightest text-white">
                     {details.label}
                   </h2>
                 </div>
 
                 <div className="mb-6 min-h-0 flex-1 overflow-y-auto pr-2">
-                  <p className="text-[1.05rem] font-light leading-[1.7] text-cream/85">{details.contextual_summary}</p>
+                  <p className="text-[1.05rem] font-light leading-[1.7] text-white/85">{details.contextual_summary}</p>
 
                   {connections.length > 0 && (
                     <div className="mt-7">
                       <h3 className="eyebrow mb-3">Ligado a</h3>
                       <div className="flex flex-wrap gap-2">
                         {connections.map(connection => (
-                          <span key={connection} className="accent-serif rounded-full bg-white/10 px-3.5 py-1 text-[1.05rem] text-cream shadow-[inset_0_0_0_1px_rgba(255,255,255,0.16)]">
+                          <span key={connection} className="accent-serif rounded-full bg-white/10 px-3.5 py-1 text-[1.05rem] text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.16)]">
                             {connection}
                           </span>
                         ))}
@@ -95,7 +88,7 @@ const SidePanel = () => {
                   <button
                     onClick={() => run('general')}
                     disabled={isBusy}
-                    className="btn-aurora flex h-12 w-full items-center justify-center gap-2.5 rounded-full text-[0.95rem] font-semibold tracking-tight"
+                    className="btn-solid flex h-12 w-full items-center justify-center gap-2.5 rounded-full text-[0.95rem] font-semibold tracking-tight"
                   >
                     <GitBranch size={17} />
                     Expandir este conceito
@@ -103,7 +96,7 @@ const SidePanel = () => {
                   <button
                     onClick={() => run('counter')}
                     disabled={isBusy}
-                    className="btn-ghost flex h-12 w-full items-center justify-center gap-2.5 rounded-full text-[0.95rem] font-medium tracking-tight text-[#ffc2d2]"
+                    className="btn-ghost flex h-12 w-full items-center justify-center gap-2.5 rounded-full text-[0.95rem] font-medium tracking-tight text-white"
                   >
                     <Swords size={17} />
                     Contra-argumentar

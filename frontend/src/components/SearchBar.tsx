@@ -22,7 +22,7 @@ export default function SearchBar({ value, onChange, onSubmit, onFocus, loading,
       onSubmit={handleSubmit}
       className={`liquid-glass flex w-full items-center gap-3 !rounded-full ${compact ? 'p-1.5 pl-5' : 'p-2 pl-6'}`}
     >
-      <Search className="h-[18px] w-[18px] shrink-0 text-mist" aria-hidden="true" />
+      <Search className="h-[18px] w-[18px] shrink-0 text-white/60" aria-hidden="true" />
       <input
         type="text"
         value={value}
@@ -33,14 +33,14 @@ export default function SearchBar({ value, onChange, onSubmit, onFocus, loading,
         disabled={loading}
         autoComplete="off"
         maxLength={200}
-        className={`min-w-0 flex-1 bg-transparent font-light tracking-tight text-cream outline-none placeholder:text-mist/55 disabled:opacity-60 ${
+        className={`min-w-0 flex-1 bg-transparent font-light tracking-tight text-white outline-none placeholder:text-white/50 disabled:opacity-60 ${
           compact ? 'py-2 text-base' : 'py-3 text-lg sm:text-xl'
         }`}
       />
       <button
         type="submit"
         disabled={loading || !value.trim()}
-        className={`btn-aurora flex shrink-0 items-center gap-2 rounded-full font-semibold tracking-tight ${
+        className={`btn-solid flex shrink-0 items-center gap-2 rounded-full font-semibold tracking-tight ${
           compact ? 'h-10 px-5 text-sm' : 'h-12 px-6 text-base'
         }`}
       >
