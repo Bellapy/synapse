@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Search, LoaderCircle, Sparkles } from 'lucide-react';
 import useGraphStore from './store/graphStore';
 import { useGraphBusy, useSearchGraph } from './hooks/useGraphQueries';
+import { useSlowHint } from './hooks/useSlowHint';
 // O canvas 3D (three.js) é pesado: só é baixado quando necessário.
 const loadGraphCanvas = () => import('./components/graphCanvas');
 const GraphCanvas = lazy(loadGraphCanvas);
@@ -12,6 +13,7 @@ function App() {
   const [query, setQuery] = useState('');
   const search = useSearchGraph();
   const isLoading = useGraphBusy();
+  const isSlow = useSlowHint(isLoading);
   const error = useGraphStore(state => state.error);
   const hasNodes = useGraphStore(state => state.nodes.length > 0);
 
@@ -76,6 +78,11 @@ function App() {
               <span>Tecelar</span>
             </button>
           </div>
+          {isSlow && !error && (
+            <p className="text-gray-400 text-center text-sm mt-2 font-mono">
+              Acordando o servidor gratuito... a primeira busca pode levar até 1 minuto.
+            </p>
+          )}
           {error && <p className="text-red-400 text-center mt-2">{error}</p>}
         </form>
       </motion.div>

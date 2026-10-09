@@ -36,8 +36,9 @@ export function useExpandNode() {
   const mutation = useMutation({
     mutationKey: GRAPH_MUTATION_KEY,
     mutationFn: ({ label, type }: { label: string; type: ExpansionType }) => {
-      const existingLabels = useGraphStore.getState().nodes.map(n => n.label);
-      return generateGraph(label, existingLabels, type);
+      const { nodes, originalQuery } = useGraphStore.getState();
+      const existing = nodes.map(n => ({ id: n.id, label: n.label }));
+      return generateGraph(label, existing, type, originalQuery);
     },
     onMutate: () => useGraphStore.getState().setError(null),
     onSuccess: data => useGraphStore.getState().applyExpansion(data),

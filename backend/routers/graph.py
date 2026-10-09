@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from models.graph import GraphResponse, QueryRequest
 from models.history import QueryHistory
 from database import get_db
+from services.ai_router import AIUnavailableError
 from services.graph_generator import generate_graph_from_query
 from decorators.cache import cache_response
 
@@ -14,7 +15,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["Graph"])
 
 @router.post("/generate-graph", response_model=GraphResponse, summary="Generate or Expand Knowledge Graph", dependencies=[Depends(rate_limit)])
-@cache_response(expire=86400) 
+@cache_response(expire=86400)
 async def generate_graph(request: QueryRequest, db: AsyncSession | None = Depends(get_db)):
 
     if db is not None:
@@ -26,13 +27,15 @@ async def generate_graph(request: QueryRequest, db: AsyncSession | None = Depend
             logger.error(f"Erro ao salvar histórico no banco de dados: {e}")
 
     try:
-        logger.info("Gerando grafo via IA...")
-        graph_data = await generate_graph_from_query(
-            request.query, 
-            request.existing_node_labels,
-            request.expansion_type
+        return await generate_graph_from_query(
+            request.query,
+            request.known_nodes,
+            request.expansion_type,
+            request.original_query,
         )
-        return graph_data
+    except AIUnavailableError as e:
+        logger.error(f"Todos os modelos de IA falharam em /api/generate-graph: {e}")
+        raise HTTPException(status_code=503, detail="A IA está sobrecarregada no momento. Tente novamente em instantes.")
     except Exception as e:
-        logger.error(f"Erro detalhado no endpoint /api/generate-graph: {e}")
+        logger.exception(f"Erro inesperado em /api/generate-graph: {e}")
         raise HTTPException(status_code=500, detail="Ocorreu um erro interno ao tentar gerar o grafo.")
