@@ -24,7 +24,7 @@ export default function PulseLoader({ slow }: { slow: boolean }) {
         <AnimatePresence mode="wait">
           <motion.p
             key={slow ? 'slow' : index}
-            className="accent-serif absolute inset-x-0 text-3xl text-white"
+            className="absolute inset-x-0 text-3xl text-white"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}

@@ -41,13 +41,13 @@ const SidePanel = () => {
             {isPending && (
               <div className="flex flex-1 flex-col items-center justify-center gap-4 py-10 text-center">
                 <LoaderCircle className="h-9 w-9 animate-spin text-white" />
-                <p className="accent-serif text-2xl text-white">Lendo “{selectedNode.label}”…</p>
+                <p className="text-2xl text-white">Lendo “{selectedNode.label}”…</p>
               </div>
             )}
 
             {isError && (
               <div className="flex flex-1 flex-col items-center justify-center gap-5 py-10 text-center">
-                <p className="accent-serif text-2xl leading-snug text-white">Não consegui ler este conceito agora.</p>
+                <p className="text-2xl leading-snug text-white">Não consegui ler este conceito agora.</p>
                 <button onClick={() => refetch()} className="btn-ghost flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium">
                   <RotateCcw size={15} />
                   Tentar de novo
@@ -62,7 +62,7 @@ const SidePanel = () => {
                     <span className="h-1.5 w-1.5 rounded-full bg-white" />
                     {details.type_tag}
                   </span>
-                  <h2 className="mt-3 text-[2.5rem] font-light leading-[1.02] tracking-tightest text-white">
+                  <h2 className="mt-3 text-[2.5rem] font-light leading-[1.02] tracking-tight text-white">
                     {details.label}
                   </h2>
                 </div>
@@ -75,7 +75,7 @@ const SidePanel = () => {
                       <h3 className="eyebrow mb-3">Ligado a</h3>
                       <div className="flex flex-wrap gap-2">
                         {connections.map(connection => (
-                          <span key={connection} className="accent-serif rounded-full bg-white/10 px-3.5 py-1 text-[1.05rem] text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.16)]">
+                          <span key={connection} className="rounded-full bg-white/10 px-3.5 py-1 text-[1.05rem] text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.16)]">
                             {connection}
                           </span>
                         ))}

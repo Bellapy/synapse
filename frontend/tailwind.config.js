@@ -19,12 +19,7 @@ export default {
         mist: '#b9aedd',
       },
       fontFamily: {
-        display: ['"Instrument Serif"', 'Georgia', 'serif'],
-        sans: ['"Bricolage Grotesque"', 'system-ui', 'sans-serif'],
-        mono: ['"Geist Mono"', 'ui-monospace', 'monospace'],
-      },
-      letterSpacing: {
-        tightest: '-0.045em',
+        sans: ['Inter', 'system-ui', 'sans-serif'],
       },
     },
   },

@@ -61,8 +61,8 @@ function App() {
           }}
           aria-label="Voltar ao início"
         >
-          <span className="text-[1.65rem] font-semibold leading-none tracking-tightest text-white">
-            syn<span className="accent-serif text-[1.15em] font-normal">apse</span>
+          <span className="text-[1.65rem] font-semibold leading-none tracking-tight text-white">
+            synapse
           </span>
         </button>
       </header>
@@ -86,10 +86,10 @@ function App() {
               transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             >
               <p className="eyebrow mb-5">mapa vivo de conexões</p>
-              <h1 className="text-[clamp(2.6rem,7.4vw,5.2rem)] font-light leading-[0.98] tracking-tightest text-white">
+              <h1 className="text-[clamp(2.6rem,7.4vw,5.2rem)] font-light leading-[0.98] tracking-tight text-white">
                 O que você quer
                 <br />
-                <span className="accent-serif text-[1.18em]">desvendar?</span>
+                <span className="font-semibold">desvendar?</span>
               </h1>
               <p className="mx-auto mt-6 max-w-md text-base font-light leading-relaxed text-white/70 sm:text-lg">
                 Digite uma ideia e eu puxo os fios que a ligam ao resto do mundo.
@@ -145,7 +145,7 @@ function App() {
         {error && (
           <motion.p
             key={error}
-            className="accent-serif mt-4 text-center text-xl text-white"
+            className="mt-4 text-center text-xl text-white"
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
             role="alert"
@@ -167,7 +167,7 @@ function App() {
             transition={{ type: 'spring', stiffness: 220, damping: 22 }}
           >
             <LoaderCircle className="h-4 w-4 animate-spin text-white" />
-            <span className="accent-serif text-xl text-white">{isSlow ? 'Acordando o servidor…' : 'Puxando novos fios…'}</span>
+            <span className="text-xl text-white">{isSlow ? 'Acordando o servidor…' : 'Puxando novos fios…'}</span>
           </motion.div>
         )}
       </AnimatePresence>
