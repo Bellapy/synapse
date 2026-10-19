@@ -149,6 +149,11 @@ const GraphCanvas = () => {
     setSelectedNode(node);
   }, [setSelectedNode]);
 
+  // Quando o layout assenta (inclusive após uma expansão), a câmera enquadra o grafo inteiro.
+  const handleEngineStop = useCallback(() => {
+    if (!useGraphStore.getState().selectedNode) graphRef.current?.zoomToFit(1200, 150);
+  }, []);
+
   const handleNodeDoubleClick = useCallback((node: any) => {
     clearSelectedNode();
     expand(node.label);
@@ -157,7 +162,7 @@ const GraphCanvas = () => {
   if (nodes.length === 0) return null;
 
   return (
-    // O bloom torna o fundo do canvas opaco (preto); `screen` o deixa transparente sobre o gradiente da página.
+    // O bloom torna o fundo do canvas opaco (preto); `screen` o deixa transparente sobre o fundo da página.
     <div ref={ref} className="absolute top-0 left-0 w-full h-full z-0" style={{ mixBlendMode: 'screen' }}>
       {bounds.width > 0 && (
         <ForceGraph3DComponent
@@ -168,6 +173,8 @@ const GraphCanvas = () => {
           backgroundColor="rgba(0,0,0,0)"
           rendererConfig={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
           cooldownTicks={200}
+          warmupTicks={25}
+          onEngineStop={handleEngineStop}
           nodeLabel="label"
           linkLabel="name"
           nodeThreeObject={getNodeObject}

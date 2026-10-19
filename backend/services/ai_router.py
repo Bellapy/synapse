@@ -100,13 +100,19 @@ async def run_with_fallback(build: Callable[[str], Any], inputs: dict) -> tuple[
     running: dict[asyncio.Task, tuple[str, float]] = {}
     failures: list[str] = []
 
+    async def attempt(model: str) -> Any:
+        # Montar o cliente do Gemini é síncrono e pesado (cria o contexto SSL, que no Windows lê o repositório de
+        # certificados e já levou dezenas de segundos). Fora do event loop, nada mais fica parado esperando por isso.
+        chain = await asyncio.to_thread(build, model)
+        return await chain.ainvoke(inputs)
+
     def launch() -> bool:
         remaining = deadline - time.monotonic()
         if not queue or remaining < 1.0:
             return False
         model = queue.pop(0)
         timeout = min(config.AI_ATTEMPT_TIMEOUT_SECONDS, remaining)
-        task = asyncio.ensure_future(asyncio.wait_for(build(model).ainvoke(inputs), timeout=timeout))
+        task = asyncio.ensure_future(asyncio.wait_for(attempt(model), timeout=timeout))
         running[task] = (model, time.monotonic())
         return True
 

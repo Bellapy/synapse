@@ -2,7 +2,7 @@ import logging
 
 from langchain_core.prompts import ChatPromptTemplate
 
-from core.ai import LANGUAGE_RULE, get_model
+from core.ai import DETAIL_LLM, LANGUAGE_RULE, get_model
 from models.graph import NodeDetailLLM, NodeDetailResponse
 from services.ai_router import run_with_fallback
 
@@ -24,7 +24,7 @@ async def generate_contextual_details(original_query: str, node_label: str) -> N
     template = ChatPromptTemplate.from_template(PROMPT)
 
     def build(model: str):
-        return template | get_model(model, 0.3, 400).with_structured_output(NodeDetailLLM)
+        return template | get_model(model, *DETAIL_LLM).with_structured_output(NodeDetailLLM)
 
     response, model = await run_with_fallback(build, {"original_query": original_query, "node_label": node_label})
     logger.info("Detalhes de '%s' gerados por %s", node_label, model)

@@ -5,7 +5,7 @@ from typing import List, Optional
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableLambda
 
-from core.ai import LANGUAGE_RULE, get_model
+from core.ai import GRAPH_LLM, LANGUAGE_RULE, get_model
 from models.graph import ExistingNode, GraphLLM, GraphResponse
 from services.ai_router import run_with_fallback
 from services.graph_postprocess import build_graph
@@ -79,7 +79,7 @@ async def generate_graph_from_query(
     }
 
     def build(model: str):
-        llm = get_model(model, 0.6, 1000).with_structured_output(GraphLLM)
+        llm = get_model(model, *GRAPH_LLM).with_structured_output(GraphLLM)
         postprocess = RunnableLambda(lambda raw: build_graph(raw, query, known, expansion_type))
         return template | llm | postprocess
 
